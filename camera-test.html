@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>カメラ診断</title>
+<style>
+body{font-family:-apple-system,sans-serif;margin:12px;font-size:16px;}
+button{font-size:18px;padding:14px 20px;border:none;border-radius:8px;
+background:#2b6cb0;color:#fff;width:100%;margin:8px 0;}
+pre{background:#f1f5f9;border:1px solid #cbd5e0;border-radius:8px;
+padding:10px;white-space:pre-wrap;word-break:break-all;font-size:14px;}
+video{width:100%;background:#000;border-radius:8px;}
+.ok{color:#2f855a;font-weight:bold}.ng{color:#c53030;font-weight:bold}
+</style>
+</head>
+<body>
+<h2>カメラ診断ツール</h2>
+<pre id="log"></pre>
+<button id="btn1">① 標準APIでカメラ起動テスト</button>
+<button id="btn2">② 制約なしで再テスト</button>
+<video id="v" playsinline muted autoplay></video>
+
+<script>
+function log(s,cls){
+  const p=document.getElementById('log');
+  p.innerHTML += (cls?'<span class="'+cls+'">'+s+'</span>':s)+'\n';
+}
+window.onerror=function(m,src,l,c,e){log('【JSエラー】'+m,'ng');};
+
+log('--- 環境チェック ---');
+log('URL方式 : '+location.protocol+
+    (location.protocol==='https:'?'  OK':'  NG（HTTPS必須）'),
+    location.protocol==='https:'?'ok':'ng');
+log('セキュアコンテキスト : '+(window.isSecureContext?'OK':'NG'),
+    window.isSecureContext?'ok':'ng');
+log('mediaDevices : '+(navigator.mediaDevices?'あり OK':'なし NG'),
+    navigator.mediaDevices?'ok':'ng');
+log('getUserMedia : '+((navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)?'あり OK':'なし NG'),
+    (navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)?'ok':'ng');
+log('UA : '+navigator.userAgent);
+log('');
+
+function test(constraints,label){
+  log('--- '+label+' ---');
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    log('getUserMedia が存在しません','ng');return;
+  }
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then(function(stream){
+      log('起動成功 OK','ok');
+      document.getElementById('v').srcObject=stream;
+      var t=stream.getVideoTracks()[0];
+      if(t) log('使用カメラ : '+t.label);
+      return navigator.mediaDevices.enumerateDevices();
+    })
+    .then(function(ds){
+      if(!ds)return;
+      ds.filter(function(d){return d.kind==='videoinput';})
+        .forEach(function(d,i){log('カメラ'+(i+1)+' : '+(d.label||'(ラベル非公開)'));});
+    })
+    .catch(function(e){
+      log('起動失敗 NG','ng');
+      log('エラー名 : '+e.name,'ng');
+      log('内容 : '+e.message,'ng');
+    });
+}
+document.getElementById('btn1').onclick=function(){
+  test({video:{facingMode:{ideal:'environment'}},audio:false},'テスト①（背面カメラ指定）');
+};
+document.getElementById('btn2').onclick=function(){
+  test({video:true,audio:false},'テスト②（制約なし）');
+};
+</script>
+</body>
+</html>
