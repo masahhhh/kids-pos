@@ -246,6 +246,7 @@ header,.screen:not(#scr-print),.noprint{display:none!important;}
 /* ===== 定数・状態 ===== */
 const KEY_P='kidspos.products', KEY_S='kidspos.settings';
 const MAX_ITEMS=30, MAX_NAME=20, DUP_MS=2000, PER_PAGE=15;
+const STALL_LIMIT=20;   /* 150ms × 20 = 約3秒フレームが進まなければ復旧 */
 let products=[], settings={tone:'pi',vol:'mid',vibration:true};
 let cart=[], editId=null, scanning=false;
 let lastCode='', lastTime=0, recv=0;
@@ -392,7 +393,8 @@ function editProduct(id){
 }
 function delProduct(id){
   const p=products.find(function(x){return x.id===id;}); if(!p)return;
-  if(!confirm('「'+p.name+'」を消しますか？'))return;
+  const ok=confirm('「'+p.name+'」を消しますか？'); resumeVideo();
+  if(!ok)return;
   products=products.filter(function(x){return x.id!==id;});
   saveP();resetForm();renderProducts();
 }
@@ -485,7 +487,8 @@ function beep(ok){
 }
 
 /* ===== レジ・スキャン（jsQR方式） ===== */
-let stream=null, scanTimer=null;
+let stream=null, scanTimer=null, restarting=false, videoBound=false;
+let lastVideoTime=-1, stallCount=0;
 const scanCanvas=document.createElement('canvas');
 const scanCtx=scanCanvas.getContext('2d',{willReadFrequently:true});
 function setStatus(html,color){
@@ -493,6 +496,28 @@ function setStatus(html,color){
     color?'<span style="color:'+color+'">'+html+'</span>':html;
 }
 function startRegister(){initAudio(); go('register'); startScan();}
+function bindVideoWatch(v){
+  if(videoBound) return; videoBound=true;
+  /* iOSはダイアログ表示や割り込みでvideoを一時停止し、自動で再開しない */
+  v.addEventListener('pause',function(){ if(scanning) resumeVideo(); });
+  v.addEventListener('ended',function(){ if(scanning) restartScan(); });
+}
+function resumeVideo(){
+  if(!scanning) return;
+  const v=document.getElementById('video');
+  if(!v) return;
+  try{
+    const p=v.play();
+    if(p&&p.catch) p.catch(function(){ restartScan(); });
+  }catch(e){ restartScan(); }
+}
+function restartScan(){
+  if(restarting) return;
+  restarting=true;
+  setStatus('カメラをつなぎ直しています…');
+  stopScan();
+  setTimeout(function(){ restarting=false; startScan(); },300);
+}
 async function startScan(){
   if(scanning) return;
   setStatus('カメラを準備しています…');
@@ -507,8 +532,9 @@ async function startScan(){
     v.setAttribute('playsinline',''); v.muted=true;
     v.srcObject=stream;
     await v.play();
-    scanning=true;
+    scanning=true; lastVideoTime=-1; stallCount=0;
     initAudio();                       /* カメラ起動で音声セッションが変わるため再実行 */
+    bindVideoWatch(v);
     clearInterval(scanTimer);
     scanTimer=setInterval(scanTick,150);
     setStatus('QRコードをカメラにうつしてください');
@@ -520,7 +546,17 @@ async function startScan(){
 }
 function scanTick(){
   const v=document.getElementById('video');
-  if(!v||!v.videoWidth) return;
+  if(!v) return;
+  const tr=stream?stream.getVideoTracks()[0]:null;
+  if(!tr||tr.readyState==='ended'){ restartScan(); return; }
+  if(v.paused){ resumeVideo(); return; }
+  if(!v.videoWidth) return;
+  /* 映像が止まったまま（フリーズ）なら復旧する */
+  if(v.currentTime===lastVideoTime){
+    if(++stallCount>=STALL_LIMIT){ stallCount=0; restartScan(); return; }
+  }else{
+    stallCount=0; lastVideoTime=v.currentTime;
+  }
   const sc=Math.min(1,1280/v.videoWidth);
   scanCanvas.width=Math.round(v.videoWidth*sc);
   scanCanvas.height=Math.round(v.videoHeight*sc);
@@ -535,7 +571,7 @@ function stopScan(){
   if(stream){ stream.getTracks().forEach(function(t){t.stop();}); stream=null; }
   const v=document.getElementById('video');
   if(v) v.srcObject=null;
-  scanning=false;
+  scanning=false; lastVideoTime=-1; stallCount=0;
 }
 function resumeScan(){if(!scanning) startScan();}
 function onScan(text){
@@ -568,7 +604,11 @@ function changeQty(i,d){
   renderCart();
 }
 function clearCart(){
-  if(cart.length&&!confirm('カートを全部消しますか？'))return;
+  if(cart.length){
+    const ok=confirm('カートを全部消しますか？');
+    resumeVideo();                     /* ダイアログでvideoが止まるため再開 */
+    if(!ok) return;
+  }
   cart=[];lastCode='';renderCart();
   setStatus('QRコードをカメラにうつしてください');
 }
@@ -666,13 +706,19 @@ function toggleVib(){
   settings.vibration=!settings.vibration; saveS(); renderSettings();
 }
 function wipe(){
-  if(!confirm('登録した商品をすべて消します。よろしいですか？'))return;
+  const ok=confirm('登録した商品をすべて消します。よろしいですか？'); resumeVideo();
+  if(!ok)return;
   products=[];saveP();renderProducts();alert('消しました');
 }
 
 /* ===== 初期化 ===== */
 load(); renderCart();
-document.addEventListener('visibilitychange',function(){if(document.hidden) stopScan();});
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden){ stopScan(); }
+  else if(document.getElementById('scr-register').classList.contains('active')){
+    resumeScan();   /* ホーム画面や他アプリから戻ったときに再開する */
+  }
+});
 </script>
 </body>
 </html>
