@@ -48,8 +48,8 @@ button:disabled{background:#a0aec0;}
 .screen.active{display:block;}
 .menu{display:grid;gap:12px;}
 .menu button{padding:24px 16px;font-size:20px;font-weight:bold;}
-input[type=text],input[type=number]{width:100%;padding:12px;font-size:18px;
-border:2px solid var(--line);border-radius:8px;background:#fff;}
+input[type=text],input[type=number],select{width:100%;padding:12px;font-size:18px;
+border:2px solid var(--line);border-radius:8px;background:#fff;font-family:inherit;}
 label{display:block;margin:12px 0 4px;font-weight:bold;font-size:15px;}
 .card{background:#fff;border:1px solid var(--line);border-radius:10px;
 padding:12px;margin-bottom:10px;}
@@ -225,12 +225,16 @@ header,.screen:not(#scr-print),.noprint{display:none!important;}
 <!-- 設定 -->
 <section class="screen" id="scr-settings">
   <div class="card">
-    <div class="row"><span class="grow">こうかおん</span>
-      <button class="small" id="swSound" onclick="toggle('sound')">ON</button></div>
+    <label for="selTone">こうかおん（読み取ったときの音）</label>
+    <select id="selTone" onchange="setTone()"></select>
+    <label for="selVol">おんりょう</label>
+    <select id="selVol" onchange="setVol()"></select>
+    <button class="small" style="margin-top:12px;width:100%" onclick="testTone()">音を聞いてみる</button>
+    <p class="note">iPhoneでは、画面を1回タップするまで音が鳴らない仕様です。まず上のボタンを押して確認してください。</p>
   </div>
   <div class="card">
     <div class="row"><span class="grow">バイブレーション</span>
-      <button class="small" id="swVib" onclick="toggle('vibration')">ON</button></div>
+      <button class="small" id="swVib" onclick="toggleVib()">ON</button></div>
     <p class="note">iPhoneではバイブレーションは動作しません（iOSの仕様）。</p>
   </div>
   <div class="card">
@@ -242,10 +246,21 @@ header,.screen:not(#scr-print),.noprint{display:none!important;}
 /* ===== 定数・状態 ===== */
 const KEY_P='kidspos.products', KEY_S='kidspos.settings';
 const MAX_ITEMS=30, MAX_NAME=20, DUP_MS=2000, PER_PAGE=15;
-let products=[], settings={sound:true,vibration:true};
+let products=[], settings={tone:'pi',vol:'mid',vibration:true};
 let cart=[], editId=null, scanner=null, scanning=false;
 let lastCode='', lastTime=0, recv=0;
 let sortMode='reg', showThumb=false;
+
+/* 効果音の定義： [周波数Hz, 長さ秒, 波形, 遅延秒] */
+const TONES={
+  pi:{name:'ピッ（電子音）',notes:[[1200,0.10,'sine',0]]},
+  pipo:{name:'ピポッ（2音）',notes:[[988,0.07,'square',0],[1319,0.11,'square',0.08]]},
+  pon:{name:'ポン（やわらかい）',notes:[[880,0.30,'triangle',0]]},
+  charin:{name:'チャリン（レジ風）',notes:[[2093,0.30,'sine',0],[3136,0.30,'sine',0.03],[2637,0.42,'sine',0.06]]},
+  bell:{name:'チーン（ベル）',notes:[[1568,0.70,'sine',0],[3136,0.55,'sine',0.01]]},
+  none:{name:'なし（無音）',notes:[]}
+};
+const VOLS={low:{name:'小',v:0.06},mid:{name:'中',v:0.15},high:{name:'大',v:0.30}};
 
 /* ===== QR生成の共通処理 ===== */
 function qrReady(){return !!window.__QRGen;}
@@ -270,7 +285,14 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){
 /* ===== 保存・読込 ===== */
 function load(){
   try{products=JSON.parse(localStorage.getItem(KEY_P))||[];}catch(e){products=[];}
-  try{settings=Object.assign(settings,JSON.parse(localStorage.getItem(KEY_S))||{});}catch(e){}
+  try{
+    const s=JSON.parse(localStorage.getItem(KEY_S))||{};
+    if(s.sound===false&&!s.tone) s.tone='none';   /* 旧設定からの引き継ぎ */
+    delete s.sound;
+    settings=Object.assign(settings,s);
+  }catch(e){}
+  if(!TONES[settings.tone]) settings.tone='pi';
+  if(!VOLS[settings.vol]) settings.vol='mid';
 }
 function saveP(){localStorage.setItem(KEY_P,JSON.stringify(products));}
 function saveS(){localStorage.setItem(KEY_S,JSON.stringify(settings));}
@@ -421,7 +443,7 @@ function renderPrint(){
   }
 }
 
-/* ===== フィードバック ===== */
+/* ===== 効果音・フィードバック ===== */
 let actx=null;
 function initAudio(){
   try{
@@ -429,17 +451,26 @@ function initAudio(){
     if(actx.state==='suspended') actx.resume();
   }catch(e){}
 }
+function playNote(freq,dur,type,delay,vol){
+  try{
+    const t0=actx.currentTime+(delay||0);
+    const o=actx.createOscillator(), g=actx.createGain();
+    o.type=type||'sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.exponentialRampToValueAtTime(vol,t0+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t0); o.stop(t0+dur+0.03);
+  }catch(e){}
+}
 function beep(ok){
   if(settings.vibration&&navigator.vibrate) navigator.vibrate(ok?40:[60,50,60]);
-  if(!settings.sound||!actx) return;
-  try{
-    const o=actx.createOscillator(),g=actx.createGain();
-    o.type='sine'; o.frequency.value=ok?1200:300;
-    g.gain.setValueAtTime(.15,actx.currentTime);
-    g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+(ok?.12:.3));
-    o.connect(g);g.connect(actx.destination);
-    o.start();o.stop(actx.currentTime+(ok?.13:.31));
-  }catch(e){}
+  if(!actx||settings.tone==='none') return;
+  const vol=(VOLS[settings.vol]||VOLS.mid).v;
+  if(!ok){ playNote(300,0.30,'sawtooth',0,vol*0.9); return; }
+  (TONES[settings.tone]||TONES.pi).notes.forEach(function(n){
+    playNote(n[0],n[1],n[2],n[3],vol);
+  });
 }
 
 /* ===== レジ・スキャン ===== */
@@ -588,19 +619,45 @@ function finish(){
 
 /* ===== 設定 ===== */
 function renderSettings(){
-  document.getElementById('swSound').textContent=settings.sound?'ON':'OFF';
-  document.getElementById('swSound').className='small'+(settings.sound?'':' sub');
-  document.getElementById('swVib').textContent=settings.vibration?'ON':'OFF';
-  document.getElementById('swVib').className='small'+(settings.vibration?'':' sub');
+  const st=document.getElementById('selTone');
+  if(!st.options.length){
+    Object.keys(TONES).forEach(function(k){
+      const o=document.createElement('option');
+      o.value=k; o.textContent=TONES[k].name; st.appendChild(o);
+    });
+  }
+  st.value=settings.tone;
+  const sv=document.getElementById('selVol');
+  if(!sv.options.length){
+    Object.keys(VOLS).forEach(function(k){
+      const o=document.createElement('option');
+      o.value=k; o.textContent=VOLS[k].name; sv.appendChild(o);
+    });
+  }
+  sv.value=settings.vol;
+  const b=document.getElementById('swVib');
+  b.textContent=settings.vibration?'ON':'OFF';
+  b.className='small'+(settings.vibration?'':' sub');
 }
-function toggle(k){settings[k]=!settings[k];saveS();renderSettings();if(settings[k])beep(true);}
+function setTone(){
+  settings.tone=document.getElementById('selTone').value;
+  saveS(); initAudio(); beep(true);
+}
+function setVol(){
+  settings.vol=document.getElementById('selVol').value;
+  saveS(); initAudio(); beep(true);
+}
+function testTone(){initAudio(); beep(true);}
+function toggleVib(){
+  settings.vibration=!settings.vibration; saveS(); renderSettings();
+}
 function wipe(){
   if(!confirm('登録した商品をすべて消します。よろしいですか？'))return;
   products=[];saveP();renderProducts();alert('消しました');
 }
 
 /* ===== 初期化 ===== */
-load(); renderCart(); renderSettings();
+load(); renderCart();
 document.addEventListener('visibilitychange',function(){if(document.hidden) stopScan();});
 </script>
 </body>
