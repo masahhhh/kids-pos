@@ -324,44 +324,79 @@ function beep(ok){
 }
 
 /* ===== レジ・スキャン ===== */
+let camId=null;
+function setStatus(html,color){
+  document.getElementById('lastScan').innerHTML=
+    color?'<span style="color:'+color+'">'+html+'</span>':html;
+}
 function startRegister(){
   initAudio(); go('register'); startScan();
 }
-function startScan(){
+async function pickBackCamera(){
+  const s=await navigator.mediaDevices.getUserMedia(
+    {video:{facingMode:{ideal:'environment'}},audio:false});
+  s.getTracks().forEach(function(t){t.stop();});
+  const all=await navigator.mediaDevices.enumerateDevices();
+  const cams=all.filter(function(d){return d.kind==='videoinput';});
+  if(!cams.length) throw new Error('カメラが見つかりません');
+  const exact=cams.find(function(d){
+    return d.label==='背面カメラ'||d.label==='Back Camera';});
+  if(exact) return exact.deviceId;
+  const back=cams.find(function(d){
+    return /背面|back|rear/i.test(d.label);});
+  return (back||cams[cams.length-1]).deviceId;
+}
+async function startScan(){
   if(scanning) return;
-  if(!scanner) scanner=new Html5Qrcode('reader',{verbose:false});
-  const box=v=>{const m=Math.floor(Math.min(v.width,v.height)*0.7);return{width:m,height:m};};
-  scanner.start({facingMode:{ideal:'environment'}},{fps:10,qrbox:box},onScan,()=>{})
-    .then(()=>{scanning=true;})
-    .catch(e=>{
-      document.getElementById('lastScan').innerHTML=
-        '<span style="color:#c53030">カメラを起動できませんでした。<br>Safariの設定でカメラを許可してください。</span>';
-    });
+  setStatus('カメラを準備しています…');
+  if(typeof Html5Qrcode==='undefined'){
+    setStatus('読み取り部品を読み込めませんでした。通信を確認し、'
+      +'ページを再読み込みしてください。','#c53030');
+    return;
+  }
+  try{
+    if(!camId) camId=await pickBackCamera();
+  }catch(e){
+    setStatus('カメラを使用できません<br>['+(e.name||'Error')+'] '
+      +(e.message||e),'#c53030');
+    return;
+  }
+  try{
+    if(!scanner) scanner=new Html5Qrcode('reader',{verbose:false});
+    await scanner.start(
+      {deviceId:{exact:camId}},
+      {fps:10,experimentalFeatures:{useBarCodeDetectorIfSupported:true}},
+      onScan,function(){}
+    );
+    scanning=true;
+    setStatus('QRコードをカメラにうつしてください');
+  }catch(e){
+    scanning=false;
+    setStatus('起動に失敗しました<br>['+((e&&e.name)||'Error')+'] '
+      +((e&&e.message)||e),'#c53030');
+  }
 }
 function stopScan(){
-  if(scanner&&scanning){scanner.stop().then(()=>{scanner.clear();scanning=false;}).catch(()=>{scanning=false;});}
+  if(scanner&&scanning){
+    scanner.stop().then(function(){scanner.clear();scanning=false;})
+      .catch(function(){scanning=false;});
+  }
 }
 function resumeScan(){if(!scanning) startScan();}
-
 function onScan(text){
   const now=Date.now();
   if(text===lastCode&&now-lastTime<DUP_MS) return;
   lastCode=text; lastTime=now;
   const item=parsePayload(text);
-  const box=document.getElementById('lastScan');
-  if(!item){
-    beep(false);
-    box.innerHTML='<span style="color:#c53030">このQRコードは使えません</span>';
-    return;
-  }
+  if(!item){beep(false);setStatus('このQRコードは使えません','#c53030');return;}
   addToCart(item.name,item.price);
   beep(true);
-  box.innerHTML=esc(item.name)+'　'+item.price+'円';
+  setStatus(esc(item.name)+'　'+item.price+'円');
 }
 function parsePayload(t){
   const a=String(t).split('|');
   if(a.length!==3||a[0]!=='KP1') return null;
-  const price=parseInt(a[1+1],10);
+  const price=parseInt(a[2],10);
   if(!Number.isFinite(price)||price<0) return null;
   return {name:a[1],price:price};
 }
