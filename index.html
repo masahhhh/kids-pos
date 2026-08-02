@@ -5,15 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="robots" content="noindex">
 <title>Kids POS - おみせやさんレジ</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-/* 後続ライブラリによる名前の上書きを避けるため、ここで退避しておく */
-window.__QRGen = window.QRCode || null;
-window.__QRLevelM = (window.QRCode && window.QRCode.CorrectLevel)
-  ? window.QRCode.CorrectLevel.M : 0;
+window.__QRGen = window.qrcode || null;
+if(window.__QRGen){
+  /* UTF-8への変換を明示指定（既定はマルチバイト非対応のため） */
+  window.__QRGen.stringToBytes = function(s){
+    var b=[],i,c,c2,cp;
+    for(i=0;i<s.length;i++){
+      c=s.charCodeAt(i);
+      if(c<0x80){ b.push(c); }
+      else if(c<0x800){ b.push(0xC0|(c>>6),0x80|(c&0x3F)); }
+      else if(c<0xD800||c>=0xE000){
+        b.push(0xE0|(c>>12),0x80|((c>>6)&0x3F),0x80|(c&0x3F)); }
+      else{
+        i++; c2=s.charCodeAt(i);
+        cp=0x10000+(((c&0x3FF)<<10)|(c2&0x3FF));
+        b.push(0xF0|(cp>>18),0x80|((cp>>12)&0x3F),
+               0x80|((cp>>6)&0x3F),0x80|(cp&0x3F)); }
+    }
+    return b;
+  };
+}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
 <style>
 :root{--main:#2b6cb0;--accent:#dd6b20;--ok:#2f855a;--ng:#c53030;
 --bg:#f7fafc;--line:#cbd5e0;--txt:#1a202c;}
@@ -50,7 +65,7 @@ table.list td{padding:10px 8px;border-top:1px solid #edf2f7;font-size:16px;
 vertical-align:middle;}
 table.list td.pr{text-align:right;white-space:nowrap;font-weight:bold;}
 table.list tr:active{background:#ebf8ff;}
-.thumb img,.thumb canvas{width:56px!important;height:56px!important;display:block;}
+.thumb img,.thumb canvas,.thumb svg{width:56px!important;height:56px!important;display:block;}
 .sortbar{display:flex;gap:6px;margin-bottom:8px;}
 .sortbar button{flex:1;padding:8px 0;font-size:14px;background:#a0aec0;}
 .sortbar button.on{background:var(--main);}
@@ -83,7 +98,7 @@ padding:10px;margin-top:10px;display:flex;justify-content:space-between;font-siz
 grid-template-columns:repeat(3,63.3mm);grid-auto-rows:55mm;page-break-after:always;}
 .cell{border:1px dashed #999;display:flex;flex-direction:column;
 align-items:center;justify-content:center;gap:1.5mm;padding:2mm;overflow:hidden;}
-.cell img,.cell canvas{width:28mm!important;height:28mm!important;display:block;}
+.cell img,.cell canvas,.cell svg{width:28mm!important;height:28mm!important;display:block;}
 .cell .nm{font-size:9pt;font-weight:bold;text-align:center;line-height:1.15;
 word-break:break-word;max-height:2.4em;overflow:hidden;}
 .cell .pr{font-size:13pt;font-weight:bold;}
@@ -238,16 +253,16 @@ function makeQR(box,text,px){
   box.innerHTML='';
   if(!qrReady()){box.textContent='QR生成不可';return;}
   try{
-    new window.__QRGen(box,{text:text,width:px,height:px,
-      colorDark:'#000000',colorLight:'#ffffff',
-      correctLevel:window.__QRLevelM});
+    var qr=window.__QRGen(0,'M');   /* 0 = 型番を自動判定 */
+    qr.addData(text,'Byte');
+    qr.make();
+    box.innerHTML=qr.createSvgTag({cellSize:4,margin:8,scalable:true});
   }catch(e){
     box.innerHTML='<span style="font-size:8pt;color:#c53030;'
       +'word-break:break-all;line-height:1.2">QRエラー: '
-      +((e&&e.name)||'Error')+' / '+((e&&e.message)||e)+'</span>';
+      +((e&&e.message)||e)+'</span>';
   }
 }
-
 function payload(p){return 'KP1|'+p.name+'|'+p.price;}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
