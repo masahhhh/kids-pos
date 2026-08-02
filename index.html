@@ -6,7 +6,14 @@
 <meta name="robots" content="noindex">
 <title>Kids POS - おみせやさんレジ</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+/* 後続ライブラリによる名前の上書きを避けるため、ここで退避しておく */
+window.__QRGen = window.QRCode || null;
+window.__QRLevelM = (window.QRCode && window.QRCode.CorrectLevel)
+  ? window.QRCode.CorrectLevel.M : 0;
+</script>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
 <style>
 :root{--main:#2b6cb0;--accent:#dd6b20;--ok:#2f855a;--ng:#c53030;
 --bg:#f7fafc;--line:#cbd5e0;--txt:#1a202c;}
@@ -226,16 +233,21 @@ let lastCode='', lastTime=0, recv=0;
 let sortMode='reg', showThumb=false;
 
 /* ===== QR生成の共通処理 ===== */
-function qrReady(){return typeof QRCode!=='undefined';}
+function qrReady(){return !!window.__QRGen;}
 function makeQR(box,text,px){
   box.innerHTML='';
   if(!qrReady()){box.textContent='QR生成不可';return;}
   try{
-    new QRCode(box,{text:text,width:px,height:px,
+    new window.__QRGen(box,{text:text,width:px,height:px,
       colorDark:'#000000',colorLight:'#ffffff',
-      correctLevel:QRCode.CorrectLevel.M});
-  }catch(e){box.textContent='QRエラー';}
+      correctLevel:window.__QRLevelM});
+  }catch(e){
+    box.innerHTML='<span style="font-size:8pt;color:#c53030;'
+      +'word-break:break-all;line-height:1.2">QRエラー: '
+      +((e&&e.name)||'Error')+' / '+((e&&e.message)||e)+'</span>';
+  }
 }
+
 function payload(p){return 'KP1|'+p.name+'|'+p.price;}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
