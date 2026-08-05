@@ -48,15 +48,18 @@ button:disabled{background:#a0aec0;}
 .screen.active{display:block;}
 .menu{display:grid;gap:12px;}
 .menu button{padding:24px 16px;font-size:20px;font-weight:bold;}
-input[type=text],input[type=number],select{width:100%;padding:12px;font-size:18px;
+input[type=text],input[type=number],select,textarea{width:100%;padding:12px;font-size:18px;
 border:2px solid var(--line);border-radius:8px;background:#fff;font-family:inherit;}
+textarea{font-size:13px;font-family:ui-monospace,monospace;line-height:1.35;}
 label{display:block;margin:12px 0 4px;font-weight:bold;font-size:15px;}
 .card{background:#fff;border:1px solid var(--line);border-radius:10px;
 padding:12px;margin-bottom:10px;}
+.card h2{font-size:16px;margin:0 0 8px;}
 .row{display:flex;align-items:center;gap:10px;}
 .row .grow{flex:1;min-width:0;}
 .note{font-size:13px;color:#4a5568;margin:8px 0;}
 .err{color:var(--ng);font-weight:bold;font-size:14px;min-height:20px;}
+.msg{color:var(--ok);font-weight:bold;font-size:14px;min-height:20px;}
 /* 商品一覧 */
 table.list{width:100%;border-collapse:collapse;background:#fff;
 border:1px solid var(--line);border-radius:10px;overflow:hidden;}
@@ -74,6 +77,9 @@ table.list tr:active{background:#ebf8ff;}
 overflow:hidden;background:#000;position:relative;}
 #reader video{position:absolute;top:0;left:0;width:100%!important;
 height:100%!important;object-fit:cover;display:block;}
+#reader::after{content:"";position:absolute;top:15%;left:15%;
+width:70%;height:70%;border:3px solid rgba(255,255,255,.75);
+border-radius:12px;pointer-events:none;}
 .last{background:#fff;border:2px solid var(--accent);border-radius:10px;
 padding:10px;margin:10px 0;text-align:center;font-size:18px;font-weight:bold;min-height:52px;}
 .cart{max-height:32vh;overflow:auto;background:#fff;border:1px solid var(--line);
@@ -130,6 +136,7 @@ header,.screen:not(#scr-print),.noprint{display:none!important;}
     <button onclick="go('list')">商品一覧を見る</button>
     <button onclick="go('products')">商品を登録する</button>
     <button onclick="go('print')">QRを印刷する</button>
+    <button onclick="go('data')">データの保存・読み込み</button>
     <button class="sub" onclick="go('settings')">設定</button>
   </div>
   <p class="note">商品を登録してQRコードを印刷し、品物に貼りつけてください。レジ画面でQRコードを読み取ると会計できます。</p>
@@ -138,7 +145,7 @@ header,.screen:not(#scr-print),.noprint{display:none!important;}
 <!-- 商品一覧 -->
 <section class="screen" id="scr-list">
   <div class="row" style="margin-bottom:8px">
-    <span class="grow">登録数 <b id="lCount">0</b> / 30点</span>
+    <span class="grow">登録数 <b id="lCount">0</b> / <span class="maxN">50</span>点</span>
     <button class="small sub" id="btnThumb" onclick="toggleThumb()">QRを表示</button>
   </div>
   <div class="sortbar">
@@ -148,7 +155,10 @@ header,.screen:not(#scr-print),.noprint{display:none!important;}
   </div>
   <div id="lList"></div>
   <p class="note">行をタップすると、その商品を編集できます。</p>
-  <button onclick="go('products')">商品を追加する</button>
+  <div class="row">
+    <button class="grow" onclick="go('products')">商品を追加する</button>
+    <button class="grow sub" onclick="go('data')">保存・読み込み</button>
+  </div>
 </section>
 
 <!-- 商品登録 -->
@@ -165,7 +175,7 @@ header,.screen:not(#scr-print),.noprint{display:none!important;}
     </div>
     <p class="note">名前が長いほどQRコードは細かくなります。読み取りにくい場合は短くしてください。</p>
   </div>
-  <p class="note">登録した商品：<span id="pCount">0</span> / 30点</p>
+  <p class="note">登録した商品：<span id="pCount">0</span> / <span class="maxN">50</span>点</p>
   <div id="pList"></div>
 </section>
 
@@ -173,9 +183,49 @@ header,.screen:not(#scr-print),.noprint{display:none!important;}
 <section class="screen" id="scr-print">
   <div class="noprint">
     <button onclick="window.print()">この内容で印刷する</button>
-    <p class="note">A4普通紙・たて向きで印刷してください。印刷ダイアログで「背景のグラフィック」を有効にすると、切り取り線が印刷されます。</p>
+    <p class="note">A4普通紙・たて向きで印刷してください。1枚に15点ずつ並びます。印刷ダイアログで「背景のグラフィック」を有効にすると、切り取り線が印刷されます。</p>
   </div>
   <div class="preview" id="printArea"></div>
+</section>
+
+<!-- データの保存・読み込み -->
+<section class="screen" id="scr-data">
+  <div class="card">
+    <h2>いま登録されている商品</h2>
+    <p>登録数 <b id="dCount">0</b> / <span class="maxN">50</span>点</p>
+    <p class="msg" id="dMsg"></p>
+    <p class="err" id="dErr"></p>
+  </div>
+
+  <div class="card">
+    <h2>ファイルに保存する</h2>
+    <button style="width:100%" onclick="exportFile()">商品データを保存する</button>
+    <p class="note">「ファイル」アプリなどに保存されます。イベントの前にバックアップしておくと安心です。</p>
+  </div>
+
+  <div class="card">
+    <h2>ファイルから読み込む</h2>
+    <div class="row">
+      <button class="grow" onclick="pickFile('add')">追加して読み込む</button>
+      <button class="grow ng" onclick="pickFile('replace')">置きかえて読み込む</button>
+    </div>
+    <input type="file" id="fileImport" accept="application/json,.json" style="display:none">
+    <p class="note">「追加」は今ある商品を残したまま増やします。「置きかえ」は今ある商品を消してから読み込みます。</p>
+  </div>
+
+  <div class="card">
+    <h2>文字でやりとりする（予備）</h2>
+    <p class="note">ファイルの保存がうまくいかないときは、下の文字をメモアプリなどに残しておき、あとで貼りつけて読み込めます。</p>
+    <textarea id="dText" rows="6" spellcheck="false" placeholder="ここに保存用の文字が入ります"></textarea>
+    <div class="row" style="margin-top:8px">
+      <button class="grow small sub" onclick="fillText()">文字を作る</button>
+      <button class="grow small sub" onclick="copyText()">コピーする</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="grow small" onclick="importText('add')">この文字を追加で読み込む</button>
+      <button class="grow small ng" onclick="importText('replace')">置きかえて読み込む</button>
+    </div>
+  </div>
 </section>
 
 <!-- レジ -->
@@ -241,18 +291,20 @@ header,.screen:not(#scr-print),.noprint{display:none!important;}
   </div>
   <div class="card">
     <button class="ng" onclick="wipe()">登録した商品をすべて消す</button>
+    <p class="note">消す前に「データの保存・読み込み」でバックアップしておくと元に戻せます。</p>
   </div>
 </section>
 
 <script>
 /* ===== 定数・状態 ===== */
 const KEY_P='kidspos.products', KEY_S='kidspos.settings';
-const MAX_ITEMS=30, MAX_NAME=20, DUP_MS=2000, PER_PAGE=15;
+const MAX_ITEMS=50, MAX_NAME=20, DUP_MS=2000, PER_PAGE=15;
 const STALL_LIMIT=20;   /* 150ms × 20 = 約3秒フレームが進まなければ復旧 */
 let products=[], settings={tone:'pi',vol:'mid',vibration:true};
 let cart=[], editId=null, scanning=false;
 let lastCode='', lastTime=0, recv=0;
 let sortMode='reg', showThumb=false;
+let importMode='add';
 
 /* 効果音の定義： [周波数Hz, 長さ秒, 波形, 遅延秒] */
 const TONES={
@@ -302,7 +354,8 @@ function saveS(){localStorage.setItem(KEY_S,JSON.stringify(settings));}
 
 /* ===== 画面遷移 ===== */
 const TITLES={home:'おみせやさんレジ',list:'商品一覧',products:'商品の登録',
-print:'QRコードの印刷',register:'レジ',checkout:'お会計',settings:'設定'};
+print:'QRコードの印刷',data:'データの保存・読み込み',register:'レジ',
+checkout:'お会計',settings:'設定'};
 function go(name){
   if(name!=='register'&&scanning) stopScan();
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
@@ -312,6 +365,7 @@ function go(name){
   if(name==='list') renderList();
   if(name==='products') renderProducts();
   if(name==='print') renderPrint();
+  if(name==='data') renderData();
   if(name==='settings') renderSettings();
 }
 document.getElementById('btnHome').onclick=function(){go('home');};
@@ -357,6 +411,9 @@ function renderList(){
 }
 
 /* ===== 商品登録 ===== */
+function newId(){
+  return Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36);
+}
 function saveProduct(){
   const err=document.getElementById('pErr');
   const name=document.getElementById('pName').value.trim();
@@ -368,8 +425,8 @@ function saveProduct(){
   if(!Number.isFinite(price)||price<0||price>99999){
     err.textContent='ねだんは0〜99999の数字で入力してください';return;}
   if(editId===null){
-    if(products.length>=MAX_ITEMS){err.textContent='商品は30点までです';return;}
-    products.push({id:Date.now().toString(36),name:name,price:price});
+    if(products.length>=MAX_ITEMS){err.textContent='商品は'+MAX_ITEMS+'点までです';return;}
+    products.push({id:newId(),name:name,price:price});
   }else{
     const p=products.find(function(x){return x.id===editId;});
     if(p){p.name=name;p.price=price;}
@@ -445,6 +502,128 @@ function renderPrint(){
     });
     area.appendChild(sheet);
   }
+}
+
+/* ===== データの保存・読み込み ===== */
+function renderData(){
+  document.getElementById('dCount').textContent=products.length;
+  dMsg(''); dErr('');
+}
+function dMsg(s){document.getElementById('dMsg').textContent=s;}
+function dErr(s){document.getElementById('dErr').textContent=s;}
+function stamp(){
+  const d=new Date(), z=function(n){return ('0'+n).slice(-2);};
+  return d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+'-'+z(d.getHours())+z(d.getMinutes());
+}
+function exportJson(){
+  return JSON.stringify({
+    app:'kidspos', format:1, exportedAt:new Date().toISOString(),
+    products:products.map(function(p){return {name:p.name,price:p.price};})
+  },null,1);
+}
+function exportFile(){
+  if(!products.length){dErr('保存する商品がありません。');return;}
+  dErr('');
+  try{
+    const blob=new Blob([exportJson()],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='kidspos-shohin-'+stamp()+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},2000);
+    dMsg(products.length+'点を保存しました（保存先を選んでください）。');
+  }catch(e){
+    dErr('保存できませんでした。下の「文字でやりとりする」をお使いください。');
+    fillText();
+  }
+}
+function pickFile(mode){
+  importMode=mode; dMsg(''); dErr('');
+  const f=document.getElementById('fileImport');
+  f.value=''; f.click();
+}
+document.getElementById('fileImport').onchange=function(e){
+  const file=e.target.files&&e.target.files[0];
+  if(!file) return;
+  const r=new FileReader();
+  r.onload=function(){ applyJsonText(String(r.result),importMode); };
+  r.onerror=function(){ dErr('ファイルを読めませんでした。'); };
+  r.readAsText(file);
+};
+function fillText(){
+  document.getElementById('dText').value=exportJson();
+  dMsg('文字を作りました。コピーしてメモに残してください。');
+}
+function copyText(){
+  const t=document.getElementById('dText');
+  if(!t.value) fillText();
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t.value).then(function(){dMsg('コピーしました。');},
+        function(){dErr('コピーできませんでした。手で選んでコピーしてください。');});
+    }else{
+      t.select(); document.execCommand('copy'); dMsg('コピーしました。');
+    }
+  }catch(e){ dErr('コピーできませんでした。手で選んでコピーしてください。'); }
+}
+function importText(mode){
+  const v=document.getElementById('dText').value.trim();
+  if(!v){dErr('読み込む文字を貼りつけてください。');return;}
+  applyJsonText(v,mode);
+}
+function normalizeList(raw){
+  let arr=null;
+  if(Array.isArray(raw)) arr=raw;
+  else if(raw&&Array.isArray(raw.products)) arr=raw.products;
+  if(!arr) return null;
+  const out=[], skipped=[];
+  arr.forEach(function(x){
+    if(!x||typeof x!=='object'){skipped.push('形式ちがい');return;}
+    const name=String(x.name==null?'':x.name).trim();
+    const price=parseInt(x.price,10);
+    if(!name||name.length>MAX_NAME||name.indexOf('|')>=0){skipped.push(name||'（名前なし）');return;}
+    if(!Number.isFinite(price)||price<0||price>99999){skipped.push(name);return;}
+    out.push({name:name,price:price});
+  });
+  return {list:out,skipped:skipped};
+}
+function applyJsonText(text,mode){
+  dMsg(''); dErr('');
+  let raw;
+  try{ raw=JSON.parse(text); }
+  catch(e){ dErr('データの形式が正しくありません（JSONとして読めません）。'); return; }
+  const norm=normalizeList(raw);
+  if(!norm){ dErr('商品データが見つかりません。'); return; }
+  if(!norm.list.length){ dErr('読み込める商品がありませんでした。'); return; }
+
+  let base;
+  if(mode==='replace'){
+    const ok=confirm('いまの商品（'+products.length+'点）を消して、'
+      +norm.list.length+'点を読み込みます。よろしいですか？');
+    resumeVideo();
+    if(!ok){ dMsg('読み込みをやめました。'); return; }
+    base=[];
+  }else{
+    base=products.slice();
+  }
+
+  let added=0, dup=0, over=0;
+  norm.list.forEach(function(n){
+    if(base.length>=MAX_ITEMS){ over++; return; }
+    const same=base.some(function(p){return p.name===n.name&&p.price===n.price;});
+    if(mode==='add'&&same){ dup++; return; }
+    base.push({id:newId(),name:n.name,price:n.price});
+    added++;
+  });
+
+  products=base; saveP();
+  renderData(); renderList(); renderProducts();
+
+  let m=added+'点を読み込みました（合計 '+products.length+'点）。';
+  if(dup) m+=' 同じ商品 '+dup+'点は飛ばしました。';
+  if(over) m+=' '+MAX_ITEMS+'点を超える '+over+'点は読み込めませんでした。';
+  dMsg(m);
+  if(norm.skipped.length) dErr('形式が正しくない '+norm.skipped.length+'点は読み込みませんでした。');
 }
 
 /* ===== 効果音・フィードバック ===== */
@@ -566,7 +745,7 @@ function scanTick(){
   scanCanvas.width=out; scanCanvas.height=out;
   scanCtx.drawImage(v,sx,sy,side,side,0,0,out,out);
   let d;
-  try{ d=scanCtx.getImageData(0,0,scanCanvas.width,scanCanvas.height); }catch(e){ return; }
+  try{ d=scanCtx.getImageData(0,0,out,out); }catch(e){ return; }
   const r=jsQR(d.data,d.width,d.height,{inversionAttempts:'attemptBoth'});
   if(r&&r.data) onScan(r.data);
 }
@@ -717,6 +896,8 @@ function wipe(){
 
 /* ===== 初期化 ===== */
 load(); renderCart();
+/* 画面上の上限表示を定数から流し込む（表記と実際の上限をずれさせない） */
+document.querySelectorAll('.maxN').forEach(function(el){el.textContent=MAX_ITEMS;});
 document.addEventListener('visibilitychange',function(){
   if(document.hidden){ stopScan(); }
   else if(document.getElementById('scr-register').classList.contains('active')){
