@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="format-detection" content="telephone=no">
-<title>Kids POS</title>
+<title>Kids POS - おみせやさんレジ</title>
 <style>
 :root{
   --bg:#f4f6f8; --card:#fff; --line:#d8dee6; --txt:#1b2430;
@@ -14,255 +14,325 @@
 html,body{margin:0;padding:0}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
-  background:var(--bg); color:var(--txt); font-size:16px; line-height:1.6;
-  padding-bottom:env(safe-area-inset-bottom);
+  background:var(--bg);color:var(--txt);font-size:16px;line-height:1.6;
 }
 #appbar{
-  position:sticky; top:0; z-index:50; background:var(--pri); color:#fff;
+  position:sticky;top:0;z-index:50;background:var(--pri);color:#fff;
   padding:calc(10px + env(safe-area-inset-top)) 12px 10px;
-  display:flex; align-items:center; gap:10px;
+  display:flex;align-items:center;gap:10px;
 }
-#appbar h1{font-size:17px;margin:0;flex:1}
-#btn-back{
-  background:rgba(255,255,255,.18); color:#fff; border:0; border-radius:8px;
-  padding:6px 12px; font-size:14px;
+#appbar h1{font-size:17px;margin:0;flex:1;font-weight:700}
+#btn-home{
+  background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:8px;
+  padding:7px 14px;font-size:14px;font-family:inherit;
 }
-main{padding:12px; max-width:720px; margin:0 auto}
+main{padding:12px;max-width:760px;margin:0 auto;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
 section{display:none}
 section.active{display:block}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+h2{font-size:15px;margin:0 0 8px}
 button{font-family:inherit;font-size:16px;cursor:pointer}
-.btn{
-  display:block;width:100%;padding:14px;border:0;border-radius:12px;
-  background:var(--pri);color:#fff;font-weight:700;margin-bottom:10px;
-}
+.btn{display:block;width:100%;padding:14px;border:0;border-radius:12px;background:var(--pri);color:#fff;font-weight:700;margin-bottom:10px}
 .btn:active{background:var(--pri-d)}
 .btn.sub{background:#e8edf3;color:var(--txt)}
 .btn.ok{background:var(--ok)}
 .btn.ng{background:var(--ng)}
-.btn.sm{width:auto;padding:8px 14px;font-size:14px;margin:0;border-radius:8px}
-.row{display:flex;gap:8px;align-items:center}
-.row>*{min-width:0}
+.btn.sm{width:auto;padding:9px 14px;font-size:14px;margin:0;border-radius:9px}
+.btn:disabled{opacity:.4;pointer-events:none}
+.btn.on{background:var(--pri);color:#fff}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px;font-weight:700}
-input[type=text],input[type=number]{
+input[type=text],input[type=number],select,textarea{
   width:100%;padding:12px;font-size:16px;border:1px solid var(--line);
-  border-radius:10px;background:#fff;color:var(--txt)
+  border-radius:10px;background:#fff;color:var(--txt);font-family:inherit;
 }
 .hint{font-size:12px;color:var(--mut);margin-top:4px}
-.count{font-size:13px;color:var(--mut);text-align:right}
+.count{font-size:13px;color:var(--mut);text-align:right;margin-bottom:6px}
 table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:middle}
+th,td{border-bottom:1px solid var(--line);padding:9px 6px;text-align:left;vertical-align:middle}
 th{font-size:12px;color:var(--mut);font-weight:700}
 td.num,th.num{text-align:right;white-space:nowrap}
+tr.tap:active{background:#eef3f9}
 .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--mut)}
 .empty{color:var(--mut);text-align:center;padding:24px 0}
+.thumb{width:44px;height:44px}
+.thumb svg{width:100%;height:100%;display:block}
 
 /* ===== カメラプレビュー（正方形） ===== */
-#reader{
-  width:100%; aspect-ratio:1/1; max-height:70vh;
-  border-radius:10px; overflow:hidden; background:#000; position:relative;
-}
-#reader video{
-  position:absolute; top:0; left:0;
-  width:100%!important; height:100%!important;
-  object-fit:cover; display:block;
-}
-#reader::after{
-  content:""; position:absolute; pointer-events:none;
-  top:15%; left:15%; width:70%; height:70%;
-  border:3px solid rgba(255,255,255,.75); border-radius:12px;
-}
-#reader::before{
-  content:""; position:absolute; pointer-events:none;
-  top:30%; left:4%; width:92%; height:40%;
-  border:2px dashed rgba(255,220,0,.85); border-radius:6px;
-}
-#reader.hide-guide::after,#reader.hide-guide::before{display:none}
+#reader{width:100%;aspect-ratio:1/1;max-height:66vh;border-radius:10px;overflow:hidden;background:#000;position:relative}
+#reader video{position:absolute;top:0;left:0;width:100%!important;height:100%!important;object-fit:cover;display:block}
+#reader::after{content:"";position:absolute;pointer-events:none;top:15%;left:15%;width:70%;height:70%;border:3px solid rgba(255,255,255,.75);border-radius:12px}
+#reader::before{content:"";position:absolute;pointer-events:none;top:30%;left:4%;width:92%;height:40%;border:2px dashed rgba(255,220,0,.85);border-radius:6px}
 #scan-status{font-size:12px;color:var(--mut);margin-top:6px;min-height:1.4em}
+#last-read{font-size:14px;font-weight:700;margin-top:4px;min-height:1.6em}
 
-/* ===== 会計 ===== */
-.total{font-size:32px;font-weight:800;text-align:right}
+/* ===== 金額 ===== */
+.total{font-size:30px;font-weight:800;text-align:right}
+.money{font-size:34px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
 .change{font-size:28px;font-weight:800;text-align:right;color:var(--ok)}
-.change.minus{color:var(--ng)}
+.change.minus{color:var(--ng);font-size:22px}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.keypad button{padding:16px 0;font-size:20px;font-weight:700;border:1px solid var(--line);border-radius:10px;background:#fff}
+.keypad button:active{background:#e8edf3}
 
-/* ===== モーダル（native confirm を使わない＝カメラ凍結対策） ===== */
-#modal{
-  position:fixed; inset:0; z-index:100; display:none;
-  background:rgba(0,0,0,.45); align-items:center; justify-content:center; padding:20px;
-}
+/* ===== モーダル・トースト ===== */
+#modal{position:fixed;inset:0;z-index:100;display:none;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:20px}
 #modal.show{display:flex}
-#modal .box{background:#fff;border-radius:14px;padding:18px;max-width:340px;width:100%}
+#modal .box{background:#fff;border-radius:14px;padding:18px;max-width:360px;width:100%}
 #modal p{margin:0 0 14px;white-space:pre-wrap}
-#toast{
-  position:fixed; left:50%; bottom:28px; transform:translateX(-50%);
-  background:rgba(20,26,34,.92); color:#fff; padding:10px 16px; border-radius:20px;
-  font-size:14px; z-index:120; opacity:0; transition:opacity .2s; pointer-events:none;
-  max-width:88vw; text-align:center;
-}
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:rgba(20,26,34,.92);color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;z-index:120;opacity:0;transition:opacity .2s;pointer-events:none;max-width:88vw;text-align:center}
 #toast.show{opacity:1}
 
 /* ===== 印刷 ===== */
-#labels{display:flex;flex-wrap:wrap;gap:6mm}
-.label{
-  border:1px dashed #999; border-radius:4px; padding:3mm;
-  text-align:center; background:#fff; page-break-inside:avoid; break-inside:avoid;
-}
-.label img{display:block;margin:0 auto;image-rendering:pixelated}
-.label .nm{font-size:11pt;font-weight:700;margin-top:2mm;word-break:break-all}
-.label .pr{font-size:13pt;font-weight:800}
+#sheet-wrap{overflow-x:auto}
+#sheet{width:190mm;zoom:.45;background:#fff}
+#sheet.sz28{display:grid;grid-template-columns:repeat(3,63.3mm)}
+#sheet.sz40{display:grid;grid-template-columns:repeat(2,95mm)}
+.cell{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:1px dashed #b0b0b0;padding:2mm;text-align:center;overflow:hidden;
+  page-break-inside:avoid;break-inside:avoid}
+#sheet.sz28 .cell{height:55mm}
+#sheet.sz40 .cell{height:68mm}
+.cell .qr{display:block}
+#sheet.sz28 .cell .qr{width:28mm;height:28mm}
+#sheet.sz40 .cell .qr{width:40mm;height:40mm}
+.cell .qr svg{width:100%;height:100%;display:block}
+.cell .nm{font-size:10pt;font-weight:700;margin-top:1.5mm;line-height:1.2;word-break:break-all}
+.cell .pr{font-size:13pt;font-weight:800;line-height:1.2}
+.cell .tx{font-size:7pt;color:#555}
+@page{size:A4 portrait;margin:10mm}
 @media print{
   #appbar,.noprint{display:none!important}
-  body{background:#fff;padding:0}
+  body{background:#fff}
   main{padding:0;max-width:none}
-  .card{border:0;padding:0;margin:0}
-  .label{border:1px dashed #bbb}
+  .card{border:0;padding:0;margin:0;background:transparent}
+  #sheet{zoom:1}
+  #sheet-wrap{overflow:visible}
 }
 </style>
 </head>
 <body>
 
 <header id="appbar">
-  <button id="btn-back" type="button" style="visibility:hidden">戻る</button>
+  <button id="btn-home" type="button">ホーム</button>
   <h1 id="title">Kids POS</h1>
 </header>
 
 <main>
 
-  <!-- ========== ホーム ========== -->
-  <section id="scr-home" class="active">
-    <button class="btn" data-go="scr-cart">レジをはじめる</button>
-    <button class="btn sub" data-go="scr-products">商品をとうろく</button>
-    <button class="btn sub" data-go="scr-print">QRコードを印刷</button>
-    <button class="btn sub" data-go="scr-data">データの保存・読みこみ</button>
-    <div class="card">
-      <div class="row" style="justify-content:space-between">
-        <span>とうろく済み商品</span>
-        <strong><span id="home-count">0</span> / <span class="max-items">50</span> 点</strong>
-      </div>
+<!-- ================= ホーム ================= -->
+<section id="scr-home" class="active">
+  <button class="btn" data-go="scr-register">レジを開始</button>
+  <button class="btn sub" data-go="scr-list">商品一覧</button>
+  <button class="btn sub" data-go="scr-products">商品の登録</button>
+  <button class="btn sub" data-go="scr-print">QRコードの印刷</button>
+  <button class="btn sub" data-go="scr-data">データの保存・読込</button>
+  <button class="btn sub" data-go="scr-settings">設定</button>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <span>登録済みの商品</span>
+      <strong><span id="home-count">0</span> / <span class="max-items">50</span> 点</strong>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- ========== 商品一覧 ========== -->
-  <section id="scr-products">
-    <button class="btn" id="btn-new">＋ あたらしく登録する</button>
-    <div class="count"><span id="prod-count">0</span> / <span class="max-items">50</span> 点</div>
-    <div class="card">
-      <table>
-        <thead><tr>
-          <th>商品名</th><th class="num">価格</th><th>バーコード</th><th class="num"></th>
-        </tr></thead>
-        <tbody id="prod-body"></tbody>
-      </table>
-      <div id="prod-empty" class="empty">まだ商品がありません</div>
+<!-- ================= 商品一覧 ================= -->
+<section id="scr-list">
+  <div class="card noprint">
+    <h2>並び替え</h2>
+    <div class="grid3">
+      <button class="btn sm sort" data-sort="reg" style="width:100%">登録順</button>
+      <button class="btn sm sort" data-sort="name" style="width:100%">名前順</button>
+      <button class="btn sm sort" data-sort="price" style="width:100%">価格順</button>
     </div>
-  </section>
+    <button class="btn sm sub" id="btn-thumb" style="width:100%;margin-top:8px">QRコードを表示</button>
+  </div>
+  <div class="count">登録数 <span id="list-count">0</span> / <span class="max-items">50</span> 点</div>
+  <div class="card">
+    <table>
+      <thead><tr>
+        <th class="qcol" style="display:none">QR</th>
+        <th>商品名</th><th class="num">価格</th><th>バーコード</th>
+      </tr></thead>
+      <tbody id="list-body"></tbody>
+    </table>
+    <div id="list-empty" class="empty">まだ商品が登録されていません</div>
+  </div>
+  <button class="btn" data-go="scr-products" id="btn-list-new">＋ 新規登録</button>
+</section>
 
-  <!-- ========== 商品編集 ========== -->
-  <section id="scr-edit">
-    <div class="card">
-      <label for="inp-name">商品名（<span class="max-name">20</span>文字まで）</label>
-      <input id="inp-name" type="text" maxlength="20" placeholder="りんご">
+<!-- ================= 商品の登録 ================= -->
+<section id="scr-products">
+  <div class="card">
+    <label for="inp-name">商品名（<span class="max-name">20</span>文字以内）</label>
+    <input id="inp-name" type="text" maxlength="20" placeholder="例：りんご">
+    <div class="hint">商品名が長いほどQRコードが細かくなり、読取精度が下がります。短い名称を推奨します。記号「|」は使用できません。</div>
 
-      <label for="inp-price">ねだん（0〜99999円）</label>
-      <input id="inp-price" type="number" inputmode="numeric" min="0" max="99999" step="1" placeholder="120">
+    <label for="inp-price">価格（税込・0〜99999円）</label>
+    <input id="inp-price" type="number" inputmode="numeric" min="0" max="99999" step="1" placeholder="例：120">
 
-      <label for="inp-code">バーコード（にゅうりょくしなくてもOK）</label>
-      <div class="row">
-        <input id="inp-code" type="text" inputmode="numeric" maxlength="14" placeholder="スキャン / 手入力">
-        <button class="btn sm" id="btn-scan-code" type="button">読取</button>
-      </div>
-      <div class="hint">数字8〜14桁（JAN／EAN／UPC など）。おなじコードは登録できません。</div>
+    <label for="inp-code">バーコード（任意）</label>
+    <div class="row">
+      <input id="inp-code" type="text" inputmode="numeric" maxlength="14" placeholder="読取または手入力" style="flex:1">
+      <button class="btn sm" id="btn-scan-code" type="button">読取</button>
+      <button class="btn sm sub" id="btn-clear-code" type="button">消去</button>
     </div>
-    <button class="btn ok" id="btn-save">保存する</button>
-    <button class="btn ng" id="btn-delete" style="display:none">この商品を削除</button>
-  </section>
+    <div class="hint">数字8〜14桁（JAN／EAN／UPC など）。同一コードの重複登録はできません。</div>
+  </div>
 
-  <!-- ========== 印刷プレビュー ========== -->
-  <section id="scr-print">
-    <div class="card noprint">
-      <label>QRコードの大きさ</label>
-      <div class="grid2">
-        <button class="btn sm qrsize" data-size="28" style="width:100%">28mm</button>
-        <button class="btn sm qrsize" data-size="40" style="width:100%">40mm</button>
-      </div>
-      <div class="hint" id="qrsize-now"></div>
-      <button class="btn" id="btn-print" style="margin-top:12px">印刷する</button>
-    </div>
+  <div id="reader-host-products" style="display:none">
     <div class="card">
-      <div id="labels"></div>
-      <div id="print-empty" class="empty">商品を登録すると、ここにQRコードが出ます</div>
+      <div id="reader-slot-p"></div>
     </div>
-  </section>
+  </div>
 
-  <!-- ========== レジ ========== -->
-  <section id="scr-cart">
-    <div class="card">
-      <div id="reader-host-cart"></div>
-      <div id="scan-status">カメラは停止中です</div>
-      <div class="grid2" style="margin-top:8px">
-        <button class="btn sm" id="btn-cam" style="width:100%">カメラを開始</button>
-        <button class="btn sm sub" id="btn-manual" style="width:100%">手入力で追加</button>
-      </div>
-    </div>
-    <div class="card">
-      <table>
-        <thead><tr><th>商品</th><th class="num">たんか</th><th class="num">数</th><th class="num"></th></tr></thead>
-        <tbody id="cart-body"></tbody>
-      </table>
-      <div id="cart-empty" class="empty">まだ何もありません</div>
-      <div class="total" style="margin-top:10px">合計 <span id="cart-total">0</span> 円</div>
-    </div>
-    <button class="btn ok" id="btn-pay">おかいけい</button>
-    <button class="btn ng" id="btn-clear">全部消す</button>
-  </section>
+  <button class="btn ok" id="btn-save">保存</button>
+  <button class="btn sub" id="btn-cancel">入力を取消</button>
+  <button class="btn ng" id="btn-delete" style="display:none">この商品を削除</button>
+</section>
 
-  <!-- ========== 会計 ========== -->
-  <section id="scr-pay">
-    <div class="card">
-      <div class="total">おあいそ <span id="pay-total">0</span> 円</div>
-      <label for="inp-recv">あずかったお金</label>
-      <input id="inp-recv" type="number" inputmode="numeric" min="0" step="1" placeholder="0">
-      <div class="grid2" style="margin-top:8px">
-        <button class="btn sm sub recv" data-add="100" style="width:100%">+100</button>
-        <button class="btn sm sub recv" data-add="500" style="width:100%">+500</button>
-        <button class="btn sm sub recv" data-add="1000" style="width:100%">+1000</button>
-        <button class="btn sm sub recv" data-add="5000" style="width:100%">+5000</button>
-      </div>
-      <div class="change" id="pay-change" style="margin-top:14px">おつり 0 円</div>
+<!-- ================= QRコードの印刷 ================= -->
+<section id="scr-print">
+  <div class="card noprint">
+    <h2>QRコードの大きさ</h2>
+    <div class="grid2">
+      <button class="btn sm qrsize" data-size="28" style="width:100%">28mm（3列×5行）</button>
+      <button class="btn sm qrsize" data-size="40" style="width:100%">40mm（2列×4行）</button>
     </div>
-    <button class="btn ok" id="btn-done">かんりょう</button>
-    <button class="btn sub" id="btn-pay-back">レジにもどる</button>
-  </section>
+    <div class="hint" id="print-info"></div>
+    <button class="btn" id="btn-print" style="margin-top:12px">印刷する</button>
+    <div class="hint">切取線を紙面に出力するには、印刷設定で「背景のグラフィック」を有効にしてください。</div>
+  </div>
+  <div class="card">
+    <div id="sheet-wrap"><div id="sheet" class="sz28"></div></div>
+    <div id="print-empty" class="empty noprint">商品を登録するとQRコードが表示されます</div>
+  </div>
+</section>
 
-  <!-- ========== データ ========== -->
-  <section id="scr-data">
-    <div class="card">
-      <strong>書き出し</strong>
-      <div class="hint">とうろくした商品を、ファイルまたは文字にして保存します。</div>
-      <button class="btn" id="btn-export-file" style="margin-top:10px">ファイルに保存</button>
-      <button class="btn sub" id="btn-export-copy">文字をコピー</button>
+<!-- ================= レジ ================= -->
+<section id="scr-register">
+  <div class="card">
+    <div id="reader-slot-r"></div>
+    <div id="scan-status">カメラは停止中です</div>
+    <div id="last-read"></div>
+    <div class="grid2" style="margin-top:8px">
+      <button class="btn sm" id="btn-cam" style="width:100%">カメラを開始</button>
+      <button class="btn sm sub" id="btn-pick" style="width:100%">一覧から選ぶ</button>
     </div>
-    <div class="card">
-      <strong>読みこみ</strong>
-      <div class="hint">読みこむと、いまの商品は<b>すべて置きかわります</b>。</div>
-      <input type="file" id="inp-file" accept="application/json,.json" style="margin-top:10px">
-      <label for="inp-json">または、コピーした文字をはりつけ</label>
-      <textarea id="inp-json" rows="5" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px"></textarea>
-      <button class="btn sub" id="btn-import-text" style="margin-top:8px">この文字から読みこむ</button>
+  </div>
+
+  <div class="card" id="pick-panel" style="display:none">
+    <h2>商品を選択</h2>
+    <div id="pick-list" class="row"></div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>商品名</th><th class="num">単価</th><th class="num">数量</th><th class="num"></th></tr></thead>
+      <tbody id="cart-body"></tbody>
+    </table>
+    <div id="cart-empty" class="empty">カートは空です</div>
+    <div class="total" style="margin-top:10px">合計 <span id="cart-total">0</span> 円</div>
+    <div class="count">点数 <span id="cart-qty">0</span> 点</div>
+  </div>
+  <button class="btn ok" id="btn-checkout" disabled>お会計</button>
+  <button class="btn ng" id="btn-clear">全て消去</button>
+</section>
+
+<!-- ================= お会計 ================= -->
+<section id="scr-checkout">
+  <div class="card">
+    <div class="total">合計 <span id="pay-total">0</span> 円</div>
+  </div>
+  <div class="card">
+    <label>預り金</label>
+    <div class="money" id="pay-recv">0</div>
+    <div class="keypad">
+      <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+      <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+      <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+      <button data-k="00">00</button><button data-k="0">0</button><button data-k="C">C</button>
     </div>
-  </section>
+    <div class="grid3" style="margin-top:10px">
+      <button class="btn sm sub fix" data-add="100" style="width:100%">+100</button>
+      <button class="btn sm sub fix" data-add="500" style="width:100%">+500</button>
+      <button class="btn sm sub fix" data-add="1000" style="width:100%">+1000</button>
+      <button class="btn sm sub fix" data-add="5000" style="width:100%">+5000</button>
+      <button class="btn sm sub fix" data-add="10000" style="width:100%">+10000</button>
+      <button class="btn sm sub" id="btn-exact" style="width:100%">同額</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="change" id="pay-change">お釣り 0 円</div>
+  </div>
+  <button class="btn ok" id="btn-done" disabled>会計を終了</button>
+  <button class="btn sub" id="btn-back-reg">レジに戻る</button>
+</section>
+
+<!-- ================= 設定 ================= -->
+<section id="scr-settings">
+  <div class="card">
+    <label for="sel-tone">効果音の種類</label>
+    <select id="sel-tone">
+      <option value="pi">ピッ（1200Hz・正弦波）</option>
+      <option value="pipo">ピポッ（2音）</option>
+      <option value="pon">ポン（880Hz・三角波）</option>
+      <option value="charin">チャリン（レジ風）</option>
+      <option value="bell">チーン（ベル）</option>
+      <option value="none">無音</option>
+    </select>
+
+    <label for="sel-vol">音量</label>
+    <select id="sel-vol">
+      <option value="low">小</option>
+      <option value="mid">中</option>
+      <option value="high">大</option>
+    </select>
+
+    <button class="btn sm sub" id="btn-test" style="margin-top:12px">試し聞き</button>
+    <div class="hint">本体が消音（サイレント）状態の場合は音が鳴りません。エラー音の種類は変更できません。</div>
+  </div>
+  <div class="card">
+    <label><input type="checkbox" id="chk-vib" style="width:auto;margin-right:8px">振動を使用する</label>
+    <div class="hint">iOS / iPadOS の Safari は振動APIに非対応のため動作しません。</div>
+  </div>
+  <div class="card">
+    <h2>データの全削除</h2>
+    <div class="hint">登録した商品と設定を全て消去します。元に戻せません。</div>
+    <button class="btn ng" id="btn-reset" style="margin-top:10px">全データを削除</button>
+  </div>
+</section>
+
+<!-- ================= データ ================= -->
+<section id="scr-data">
+  <div class="card">
+    <h2>書き出し</h2>
+    <div class="hint">登録した商品を、ファイルまたは文字列として保存します。</div>
+    <button class="btn" id="btn-export-file" style="margin-top:10px">ファイルに保存</button>
+    <button class="btn sub" id="btn-export-copy">文字列をコピー</button>
+  </div>
+  <div class="card">
+    <h2>読み込み</h2>
+    <div class="hint">読み込むと、現在の商品は<b>全て置き換わります</b>。</div>
+    <input type="file" id="inp-file" accept="application/json,.json" style="margin-top:10px">
+    <label for="inp-json">または、コピーした文字列を貼り付け</label>
+    <textarea id="inp-json" rows="5"></textarea>
+    <button class="btn sub" id="btn-import-text" style="margin-top:8px">この文字列から読み込む</button>
+  </div>
+</section>
 
 </main>
 
-<!-- スキャナ本体（画面間で使い回す） -->
+<!-- カメラ本体（DOM上に1つのみ。使用画面へ移動させる） -->
 <div id="reader" style="display:none"></div>
 
 <div id="modal"><div class="box">
   <p id="modal-msg"></p>
   <div class="grid2">
-    <button class="btn sm sub" id="modal-no" style="width:100%">キャンセル</button>
-    <button class="btn sm ng" id="modal-yes" style="width:100%">OK</button>
+    <button class="btn sm sub" id="modal-no" style="width:100%">取消</button>
+    <button class="btn sm ng" id="modal-yes" style="width:100%">実行</button>
   </div>
 </div></div>
 
@@ -275,677 +345,751 @@ td.num,th.num{text-align:right;white-space:nowrap}
 <script>
 'use strict';
 
-/* ============================================================
+/* ==========================================================
    定数
-   ============================================================ */
-const MAX_ITEMS = 50;
-const MAX_NAME  = 20;
-const MAX_PRICE = 99999;
-const CODE_RE   = /^[0-9]{8,14}$/;
-const NAME_NG   = /[|\r\n\t]/;
-const SCAN_SIDE = 480;      // デコード用内部解像度（正方形の一辺）
-const SCAN_MS   = 150;      // スキャン間隔
-const STALL_LIMIT = 20;     // 150ms×20 = 3秒フレーム停止で再接続
+   ========================================================== */
+const MAX_ITEMS   = 50;
+const MAX_NAME    = 20;
+const MAX_PRICE   = 99999;
+const MAX_RECV    = 9999999;      // 預り金7桁
+const CODE_RE     = /^[0-9]{8,14}$/;
+const NAME_NG     = /[|\r\n\t]/;
+const SCAN_MS     = 150;          // 走査間隔
+const DEDUPE_MS   = 2000;         // 同一コードの重複抑止
+const STALL_LIMIT = 20;           // 150ms×20 = 約3秒で異常判定
+const SCAN_SIDE   = 640;          // デコード用の正方形一辺(px)
 const LS_P = 'kidspos.products';
 const LS_S = 'kidspos.settings';
 
-/* ============================================================
+/* ==========================================================
    状態
-   ============================================================ */
-let products = [];              // {name, price, code}
-let settings = { qrSize: 28 };
-let cart     = [];              // {name, price, qty}
-let editIndex = -1;
-let scanMode  = 'cart';         // 'cart' | 'register'
+   ========================================================== */
+let products = [];   // {id,name,price,code}
+let cart     = [];   // {name,price,qty}
+let settings = { tone:'pi', vol:'mid', vibration:true, qrSize:28, showQr:false, sort:'reg' };
+let editId   = null;
+let scanMode = 'register';   // 'register' | 'code'
+let recvStr  = '';
 
-/* ============================================================
+/* ==========================================================
    ユーティリティ
-   ============================================================ */
+   ========================================================== */
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
-  ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const esc = (s) => String(s).replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const yen = (n) => Number(n).toLocaleString('ja-JP');
+const newId = () => Date.now().toString(36) + Math.floor(Math.random()*1296).toString(36);
 
 let toastTimer = null;
 function toast(msg){
   const t = $('#toast');
   t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
-// native confirm は iOS でカメラを凍結させるため自前モーダルを使う
-function confirmBox(msg){
-  return new Promise((resolve) => {
+/* ネイティブ confirm は iOS で video を停止させるため使用しない */
+function confirmBox(msg, okLabel){
+  return new Promise((resolve)=>{
     const m = $('#modal');
     $('#modal-msg').textContent = msg;
+    $('#modal-yes').textContent = okLabel || '実行';
     m.classList.add('show');
-    const done = (v) => {
+    const fin = (v)=>{
       m.classList.remove('show');
       $('#modal-yes').removeEventListener('click', yes);
       $('#modal-no').removeEventListener('click', no);
       resolve(v);
-      setTimeout(resumeVideo, 60);   // 閉じた直後に映像を復帰
+      setTimeout(resumeVideo, 60);       // ダイアログ閉鎖後に映像を復帰
     };
-    const yes = () => done(true);
-    const no  = () => done(false);
+    const yes = ()=>fin(true), no = ()=>fin(false);
     $('#modal-yes').addEventListener('click', yes);
     $('#modal-no').addEventListener('click', no);
   });
 }
 
-/* ============================================================
+/* ==========================================================
    永続化
-   ============================================================ */
+   ========================================================== */
+function sanitize(p){
+  if(!p || typeof p.name !== 'string') return null;
+  const name = p.name.replace(NAME_NG,'').slice(0,MAX_NAME).trim();
+  if(!name) return null;
+  let price = parseInt(p.price,10);
+  if(!Number.isFinite(price) || price < 0) price = 0;
+  if(price > MAX_PRICE) price = MAX_PRICE;
+  const code = (typeof p.code === 'string' && CODE_RE.test(p.code)) ? p.code : '';
+  const id = (typeof p.id === 'string' && p.id) ? p.id : newId();
+  return { id, name, price, code };
+}
 function loadAll(){
   try{
-    const p = JSON.parse(localStorage.getItem(LS_P) || '[]');
-    if (Array.isArray(p)) products = p.map(sanitize).filter(Boolean).slice(0, MAX_ITEMS);
+    const a = JSON.parse(localStorage.getItem(LS_P) || '[]');
+    if(Array.isArray(a)) products = a.map(sanitize).filter(Boolean).slice(0,MAX_ITEMS);
   }catch(e){ products = []; }
   try{
     const s = JSON.parse(localStorage.getItem(LS_S) || '{}');
-    if (s && (s.qrSize === 28 || s.qrSize === 40)) settings.qrSize = s.qrSize;
+    if(s && typeof s === 'object'){
+      if(TONES[s.tone]) settings.tone = s.tone;
+      if(VOLS[s.vol])   settings.vol  = s.vol;
+      if(typeof s.vibration === 'boolean') settings.vibration = s.vibration;
+      if(s.qrSize === 28 || s.qrSize === 40) settings.qrSize = s.qrSize;
+      if(typeof s.showQr === 'boolean') settings.showQr = s.showQr;
+      if(['reg','name','price'].includes(s.sort)) settings.sort = s.sort;
+    }
   }catch(e){ /* 既定値のまま */ }
 }
-function saveProducts(){ localStorage.setItem(LS_P, JSON.stringify(products)); }
-function saveSettings(){ localStorage.setItem(LS_S, JSON.stringify(settings)); }
+const saveProducts = () => localStorage.setItem(LS_P, JSON.stringify(products));
+const saveSettings = () => localStorage.setItem(LS_S, JSON.stringify(settings));
 
-function sanitize(p){
-  if (!p || typeof p.name !== 'string') return null;
-  const name = p.name.replace(NAME_NG, '').slice(0, MAX_NAME).trim();
-  if (!name) return null;
-  let price = parseInt(p.price, 10);
-  if (!Number.isFinite(price) || price < 0) price = 0;
-  if (price > MAX_PRICE) price = MAX_PRICE;
-  const code = (typeof p.code === 'string' && CODE_RE.test(p.code)) ? p.code : '';
-  return { name, price, code };
-}
+/* ==========================================================
+   効果音（Web Audio API / 音源ファイルなし）
+   ========================================================== */
+const TONES = {
+  pi:     [{f:1200,t:0,   d:0.10,w:'sine'}],
+  pipo:   [{f:988, t:0,   d:0.09,w:'sine'},{f:1319,t:0.10,d:0.13,w:'sine'}],
+  pon:    [{f:880, t:0,   d:0.30,w:'triangle'}],
+  charin: [{f:2093,t:0,   d:0.18,w:'sine'},{f:3136,t:0.02,d:0.16,w:'sine'},{f:2637,t:0.05,d:0.24,w:'sine'}],
+  bell:   [{f:1568,t:0,   d:0.60,w:'sine'},{f:3136,t:0,   d:0.55,w:'sine'}],
+  none:   []
+};
+const VOLS = { low:0.06, mid:0.15, high:0.30 };
 
-/* ============================================================
-   サウンド（Web Audio / iOS 対策）
-   ============================================================ */
 let ac = null;
 async function unlockAudio(){
   try{
-    if (!ac){
+    if(!ac){
       const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
+      if(!AC) return;
       ac = new AC();
     }
-    if (ac.state === 'suspended') await ac.resume();
-    // 無音バッファでハード的にアンロック
-    const b = ac.createBuffer(1, 1, 22050);
+    if(ac.state === 'suspended') await ac.resume();
+    const b = ac.createBuffer(1,1,22050);
     const s = ac.createBufferSource();
     s.buffer = b; s.connect(ac.destination); s.start(0);
-    // カメラ使用時に出力が通話系に切り替わるのを防ぐ（対応ブラウザのみ）
-    if (navigator.audioSession) navigator.audioSession.type = 'playback';
-  }catch(e){ /* 音は無くても業務は継続 */ }
+    if(navigator.audioSession) navigator.audioSession.type = 'playback';
+  }catch(e){ /* 音が出なくても動作は継続 */ }
 }
-function tone(freq, dur, delay){
-  if (!ac || ac.state !== 'running') return;
-  const t0 = ac.currentTime + (delay || 0);
-  const o = ac.createOscillator();
-  const g = ac.createGain();
-  o.type = 'square'; o.frequency.value = freq;
+function emit(f, start, dur, wave, gain){
+  if(!ac || ac.state !== 'running') return;
+  const t0 = ac.currentTime + start;
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = wave; o.frequency.value = f;
   g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.01);
+  g.gain.exponentialRampToValueAtTime(Math.max(gain,0.0002), t0 + 0.008);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   o.connect(g); g.connect(ac.destination);
-  o.start(t0); o.stop(t0 + dur + 0.02);
+  o.start(t0); o.stop(t0 + dur + 0.03);
 }
-const beepOk   = () => { tone(1660, 0.09, 0); };
-const beepNg   = () => { tone(220, 0.18, 0); tone(180, 0.22, 0.16); };
-const beepDone = () => { tone(880,0.1,0); tone(1174,0.1,0.11); tone(1568,0.18,0.22); };
+function playTone(){
+  const spec = TONES[settings.tone] || [];
+  const g = VOLS[settings.vol] || 0.15;
+  spec.forEach(p => emit(p.f, p.t, p.d, p.w, g));
+  vibrate(30);
+}
+function playError(){
+  emit(300, 0, 0.30, 'sawtooth', VOLS[settings.vol] || 0.15);
+  vibrate([40,60,40]);
+}
+function vibrate(pat){
+  if(settings.vibration && navigator.vibrate){ try{ navigator.vibrate(pat); }catch(e){} }
+}
 
-/* ============================================================
+/* ==========================================================
    画面遷移
-   ============================================================ */
+   ========================================================== */
 const TITLES = {
-  'scr-home':'Kids POS', 'scr-products':'商品リスト', 'scr-edit':'商品のとうろく',
-  'scr-print':'QRコード印刷', 'scr-cart':'レジ', 'scr-pay':'おかいけい', 'scr-data':'データ'
+  'scr-home':'Kids POS','scr-list':'商品一覧','scr-products':'商品の登録',
+  'scr-print':'QRコードの印刷','scr-register':'レジ','scr-checkout':'お会計',
+  'scr-settings':'設定','scr-data':'データの保存・読込'
 };
-let backTo = null;
-
 function showScreen(id){
-  if (id !== 'scr-cart' && id !== 'scr-edit') stopScan();
+  if(id !== 'scr-register' && id !== 'scr-products') stopScan();
   $$('section').forEach(s => s.classList.toggle('active', s.id === id));
   $('#title').textContent = TITLES[id] || 'Kids POS';
-  $('#btn-back').style.visibility = (id === 'scr-home') ? 'hidden' : 'visible';
-  backTo = (id === 'scr-home') ? null
-        : (id === 'scr-edit') ? 'scr-products'
-        : (id === 'scr-pay')  ? 'scr-cart' : 'scr-home';
-  window.scrollTo(0, 0);
-  if (id === 'scr-products') renderProducts();
-  if (id === 'scr-print')    renderLabels();
-  if (id === 'scr-cart')     renderCart();
-  if (id === 'scr-home')     $('#home-count').textContent = products.length;
+  window.scrollTo(0,0);
+  if(id === 'scr-home')     $('#home-count').textContent = products.length;
+  if(id === 'scr-list')     renderList();
+  if(id === 'scr-print')    renderSheet();
+  if(id === 'scr-register') { renderCart(); renderPick(); }
+  if(id === 'scr-settings') syncSettingsUI();
 }
 
-/* ============================================================
+/* ==========================================================
+   QRコード生成
+   ========================================================== */
+function qrPayload(p){ return 'KP1|' + p.name + '|' + p.price; }
+function qrSvg(text){
+  try{
+    if(window.qrcode && qrcode.stringToBytesFuncs && qrcode.stringToBytesFuncs['UTF-8']){
+      qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+    }
+    const qr = qrcode(0,'M');            // 型番0 = 自動判定 / 誤り訂正 M
+    qr.addData(text,'Byte');
+    qr.make();
+    return qr.createSvgTag({ cellSize:4, margin:8, scalable:true });
+  }catch(e){ return '<svg viewBox="0 0 1 1"></svg>'; }
+}
+
+/* ==========================================================
    商品一覧
-   ============================================================ */
-function renderProducts(){
-  const tb = $('#prod-body');
-  tb.innerHTML = products.map((p, i) => `
-    <tr>
+   ========================================================== */
+function sortedProducts(){
+  const a = products.slice();
+  if(settings.sort === 'name')  a.sort((x,y)=>x.name.localeCompare(y.name,'ja'));
+  if(settings.sort === 'price') a.sort((x,y)=>x.price - y.price);
+  return a;
+}
+function renderList(){
+  $$('.sort').forEach(b => b.classList.toggle('sub', b.dataset.sort !== settings.sort));
+  $('#btn-thumb').textContent = settings.showQr ? 'QRコードを隠す' : 'QRコードを表示';
+  $$('.qcol').forEach(e => e.style.display = settings.showQr ? '' : 'none');
+
+  $('#list-body').innerHTML = sortedProducts().map(p => `
+    <tr class="tap" data-id="${p.id}">
+      ${settings.showQr ? `<td class="qcol"><div class="thumb">${qrSvg(qrPayload(p))}</div></td>` : ''}
       <td>${esc(p.name)}</td>
       <td class="num">${yen(p.price)}円</td>
       <td class="code">${p.code ? esc(p.code) : '—'}</td>
-      <td class="num"><button class="btn sm sub" data-edit="${i}">編集</button></td>
     </tr>`).join('');
-  $('#prod-empty').style.display = products.length ? 'none' : '';
-  $('#prod-count').textContent = products.length;
+  $('#list-empty').style.display = products.length ? 'none' : '';
+  $('#list-count').textContent = products.length;
   $('#home-count').textContent = products.length;
+  $('#btn-list-new').disabled = products.length >= MAX_ITEMS;
 }
 
-function openEdit(index){
-  editIndex = index;
-  const p = (index >= 0) ? products[index] : { name:'', price:'', code:'' };
-  $('#inp-name').value  = p.name;
-  $('#inp-price').value = p.price;
-  $('#inp-code').value  = p.code;
-  $('#btn-delete').style.display = (index >= 0) ? '' : 'none';
-  showScreen('scr-edit');
+/* ==========================================================
+   商品の登録
+   ========================================================== */
+function openEdit(id){
+  editId = id;
+  const p = id ? products.find(x => x.id === id) : null;
+  $('#inp-name').value  = p ? p.name  : '';
+  $('#inp-price').value = p ? p.price : '';
+  $('#inp-code').value  = p ? p.code  : '';
+  $('#btn-delete').style.display = p ? '' : 'none';
+  showScreen('scr-products');
 }
-
-function validateProduct(name, price, code, idx){
-  if (!name) return '商品名をいれてください';
-  if (name.length > MAX_NAME) return `商品名は${MAX_NAME}文字までです`;
-  if (NAME_NG.test(name)) return '商品名に使えない記号（| 改行）があります';
-  if (!Number.isInteger(price) || price < 0 || price > MAX_PRICE)
-    return `ねだんは0〜${MAX_PRICE}の整数でいれてください`;
-  if (code){
-    if (!CODE_RE.test(code)) return 'バーコードは数字8〜14桁です';
-    const d = products.findIndex((p, i) => p.code === code && i !== idx);
-    if (d >= 0) return `そのバーコードは「${products[d].name}」に登録ずみです`;
+function validate(name, price, code, id){
+  if(!name) return '商品名を入力してください';
+  if(name.length > MAX_NAME) return '商品名は' + MAX_NAME + '文字以内で入力してください';
+  if(NAME_NG.test(name)) return '商品名に使用できない記号（|・改行）が含まれています';
+  if(!Number.isInteger(price) || price < 0 || price > MAX_PRICE)
+    return '価格は0〜' + MAX_PRICE + 'の整数で入力してください';
+  if(code){
+    if(!CODE_RE.test(code)) return 'バーコードは数字8〜14桁で入力してください';
+    const d = products.find(p => p.code === code && p.id !== id);
+    if(d) return 'そのバーコードは「' + d.name + '」に登録済みです';
   }
-  if (idx < 0 && products.length >= MAX_ITEMS) return `商品は${MAX_ITEMS}点までです`;
+  if(!id && products.length >= MAX_ITEMS) return '商品の登録は' + MAX_ITEMS + '点までです';
   return null;
 }
-
 function saveEdit(){
   const name  = $('#inp-name').value.trim();
-  const price = parseInt($('#inp-price').value, 10);
+  const price = parseInt($('#inp-price').value,10);
   const code  = $('#inp-code').value.trim();
-  const err = validateProduct(name, price, code, editIndex);
-  if (err){ beepNg(); toast(err); return; }
-  const rec = { name, price, code };
-  if (editIndex >= 0) products[editIndex] = rec; else products.push(rec);
-  saveProducts(); beepOk(); toast('保存しました');
-  showScreen('scr-products');
+  const err = validate(name, price, code, editId);
+  if(err){ playError(); toast(err); return; }
+  if(editId){
+    const p = products.find(x => x.id === editId);
+    p.name = name; p.price = price; p.code = code;
+  }else{
+    products.push({ id:newId(), name, price, code });
+  }
+  saveProducts(); playTone(); toast('保存しました');
+  editId = null; showScreen('scr-list');
 }
-
 async function deleteEdit(){
-  if (editIndex < 0) return;
-  const ok = await confirmBox(`「${products[editIndex].name}」を削除します。よろしいですか？`);
-  if (!ok) return;
-  products.splice(editIndex, 1);
+  if(!editId) return;
+  const p = products.find(x => x.id === editId);
+  if(!p) return;
+  if(!await confirmBox('「' + p.name + '」を削除します。よろしいですか。','削除')) return;
+  products = products.filter(x => x.id !== editId);
   saveProducts(); toast('削除しました');
-  showScreen('scr-products');
+  editId = null; showScreen('scr-list');
 }
 
-/* ============================================================
-   QRラベル（印刷）
-   ============================================================ */
-function qrPayload(p){ return `KP1|${p.name}|${p.price}`; }
-
-function makeQrDataUrl(text){
-  try{
-    if (window.qrcode && qrcode.stringToBytesFuncs && qrcode.stringToBytesFuncs['UTF-8']){
-      qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
-    }
-    const qr = qrcode(0, 'M');        // 0 = 型番自動
-    qr.addData(text, 'Byte');
-    qr.make();
-    return qr.createDataURL(8, 2);    // セル8px / マージン2セル
-  }catch(e){ return null; }
-}
-
-function renderLabels(){
+/* ==========================================================
+   印刷
+   ========================================================== */
+function renderSheet(){
   const mm = settings.qrSize;
-  $('#qrsize-now').textContent = `いまの大きさ：${mm}mm`;
-  $$('.qrsize').forEach(b => {
-    const on = Number(b.dataset.size) === mm;
-    b.classList.toggle('sub', !on);
-  });
-  const host = $('#labels');
-  host.innerHTML = products.map(p => {
-    const url = makeQrDataUrl(qrPayload(p));
-    const img = url ? `<img src="${url}" style="width:${mm}mm;height:${mm}mm" alt="">`
-                    : `<div style="width:${mm}mm;height:${mm}mm;background:#eee"></div>`;
-    return `<div class="label" style="width:${mm + 12}mm">
-      ${img}<div class="nm">${esc(p.name)}</div><div class="pr">${yen(p.price)}円</div></div>`;
-  }).join('');
+  const perPage = (mm === 28) ? 15 : 8;
+  $('#print-info').textContent =
+    '現在の設定：' + mm + 'mm角 / 1ページあたり ' + perPage + '点（全' + products.length + '点）';
+  $$('.qrsize').forEach(b => b.classList.toggle('sub', Number(b.dataset.size) !== mm));
+  const sheet = $('#sheet');
+  sheet.className = (mm === 28) ? 'sz28' : 'sz40';
+  sheet.innerHTML = sortedProducts().map(p => `
+    <div class="cell">
+      <div class="qr">${qrSvg(qrPayload(p))}</div>
+      <div class="nm">${esc(p.name)}</div>
+      <div class="pr">${yen(p.price)}円</div>
+      <div class="tx">税込</div>
+    </div>`).join('');
   $('#print-empty').style.display = products.length ? 'none' : '';
 }
 
-/* ============================================================
+/* ==========================================================
    カート
-   ============================================================ */
+   ========================================================== */
 function addToCart(name, price){
   const hit = cart.find(c => c.name === name && c.price === price);
-  if (hit) hit.qty++; else cart.push({ name, price, qty:1 });
+  if(hit) hit.qty++; else cart.push({ name, price, qty:1 });
   renderCart();
 }
-function cartTotal(){ return cart.reduce((s, c) => s + c.price * c.qty, 0); }
+const cartTotal = () => cart.reduce((s,c)=>s + c.price * c.qty, 0);
+const cartQty   = () => cart.reduce((s,c)=>s + c.qty, 0);
 
 function renderCart(){
-  $('#cart-body').innerHTML = cart.map((c, i) => `
+  $('#cart-body').innerHTML = cart.map((c,i)=>`
     <tr>
       <td>${esc(c.name)}</td>
       <td class="num">${yen(c.price)}</td>
       <td class="num">${c.qty}</td>
-      <td class="num"><button class="btn sm sub" data-del="${i}">－</button></td>
+      <td class="num"><button class="btn sm sub" data-del="${i}">−</button></td>
     </tr>`).join('');
   $('#cart-empty').style.display = cart.length ? 'none' : '';
   $('#cart-total').textContent = yen(cartTotal());
+  $('#cart-qty').textContent = cartQty();
+  $('#btn-checkout').disabled = (cart.length === 0);
+}
+function renderPick(){
+  $('#pick-list').innerHTML = sortedProducts().map(p =>
+    `<button class="btn sm sub" data-pick="${p.id}">${esc(p.name)} ${yen(p.price)}円</button>`).join('')
+    || '<span class="hint">商品が登録されていません</span>';
 }
 
-function addByCode(code){
-  const p = products.find(x => x.code === code);
-  if (!p){ beepNg(); toast('とうろくされていないバーコードです'); return; }
-  addToCart(p.name, p.price); beepOk();
-  toast(`${p.name} ${yen(p.price)}円`);
-}
-
-function addFromQrPayload(text){
-  const parts = text.split('|');
-  if (parts.length < 3){ beepNg(); toast('QRコードが読めませんでした'); return; }
-  const name = parts[1].slice(0, MAX_NAME);
-  const price = parseInt(parts[2], 10);
-  if (!name || !Number.isFinite(price) || price < 0 || price > MAX_PRICE){
-    beepNg(); toast('QRコードの中身がおかしいです'); return;
-  }
-  addToCart(name, price); beepOk();
-  toast(`${name} ${yen(price)}円`);
-}
-
-/* ============================================================
-   デコーダ（QR = jsQR / 1D = ZXing）
-   ============================================================ */
-let zxReader = null;
+/* ==========================================================
+   デコード
+   ========================================================== */
+let zx = null;
 function initZXing(){
-  if (zxReader) return zxReader;
-  if (!window.ZXing || !ZXing.MultiFormatReader) return null;
+  if(zx) return zx;
+  if(!window.ZXing || !ZXing.MultiFormatReader) return null;
   try{
     const F = ZXing.BarcodeFormat, H = ZXing.DecodeHintType;
     const hints = new Map();
-    hints.set(H.POSSIBLE_FORMATS,
-      [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128, F.CODE_39, F.ITF]);
+    hints.set(H.POSSIBLE_FORMATS,[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,F.CODE_128,F.CODE_39,F.ITF]);
     hints.set(H.TRY_HARDER, true);
-    zxReader = new ZXing.MultiFormatReader();
-    zxReader.setHints(hints);
-    return zxReader;
+    zx = new ZXing.MultiFormatReader();
+    zx.setHints(hints);
+    return zx;
   }catch(e){ return null; }
 }
-
-// RGBA -> 輝度（ZXing の RGBLuminanceSource は輝度配列を要求する）
+/* ZXing の RGBLuminanceSource は輝度配列を要求するため RGBA から変換する */
 function toLuminance(d, w, h){
   const out = new Uint8ClampedArray(w * h);
-  for (let i = 0, j = 0; i < out.length; i++, j += 4){
-    out[i] = (d[j] * 306 + d[j + 1] * 601 + d[j + 2] * 117) >> 10;
+  for(let i = 0, j = 0; i < out.length; i++, j += 4){
+    out[i] = (d[j]*306 + d[j+1]*601 + d[j+2]*117) >> 10;
   }
   return out;
 }
-
-function decode1D(imageData){
+function decode1D(img){
   const r = initZXing();
-  if (!r) return null;
+  if(!r) return null;
   try{
     const src = new ZXing.RGBLuminanceSource(
-      toLuminance(imageData.data, imageData.width, imageData.height),
-      imageData.width, imageData.height);
-    const bmp = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(src));
-    const res = r.decode(bmp);
+      toLuminance(img.data, img.width, img.height), img.width, img.height);
+    const res = r.decode(new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(src)));
     return res ? res.getText() : null;
   }catch(e){
-    return null;                 // NotFoundException は正常系
+    return null;                       // NotFoundException は正常系
   }finally{
     try{ r.reset(); }catch(e){}
   }
 }
 
-/* ============================================================
+/* ==========================================================
    スキャナ
-   ============================================================ */
+   ========================================================== */
 let stream = null, video = null, canvas = null, ctx = null;
-let scanRunning = false, scanTimer = null, scanFrame = 0;
-let lastVideoTime = -1, stallCount = 0;
-let lastText = '', lastAt = 0;
+let scanRunning = false, scanTimer = null, frameNo = 0;
+let lastTime = -1, stall = 0, lastText = '', lastAt = 0;
 
-function setStatus(t){ $('#scan-status').textContent = t; }
+const setStatus = (t) => { $('#scan-status').textContent = t; };
 
 function ensureVideo(){
-  if (video) return video;
+  if(video) return;
   video = document.createElement('video');
-  video.setAttribute('playsinline', '');
-  video.setAttribute('webkit-playsinline', '');
-  video.setAttribute('muted', '');
-  video.muted = true;
-  video.autoplay = true;
+  video.setAttribute('playsinline','');
+  video.setAttribute('webkit-playsinline','');
+  video.muted = true; video.autoplay = true;
+  video.addEventListener('pause', ()=>{ if(scanRunning) setTimeout(resumeVideo,120); });
+  video.addEventListener('ended', ()=>{ if(scanRunning) restartCamera(); });
   $('#reader').appendChild(video);
   canvas = document.createElement('canvas');
-  ctx = canvas.getContext('2d', { willReadFrequently:true });
-  return video;
+  ctx = canvas.getContext('2d',{ willReadFrequently:true });
 }
-
-async function startScan(hostSel, mode){
+function mountReader(slotSel){
+  const r = $('#reader');
+  r.style.display = '';
+  $(slotSel).appendChild(r);
+}
+async function startScan(slotSel, mode){
   await unlockAudio();
   scanMode = mode;
-  const host = $(hostSel);
-  const reader = $('#reader');
-  reader.style.display = '';
-  reader.classList.toggle('hide-guide', false);
-  host.appendChild(reader);
+  mountReader(slotSel);
   ensureVideo();
-
-  if (scanRunning){ resumeVideo(); return; }
+  if(scanRunning){ resumeVideo(); return; }
   setStatus('カメラを起動しています…');
   try{
     stream = await navigator.mediaDevices.getUserMedia({
       audio:false,
-      video:{
-        facingMode:{ ideal:'environment' },
-        width:{ ideal:1280 }, height:{ ideal:1280 }
-      }
+      video:{ facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080} }
     });
   }catch(e){
-    setStatus('カメラを使えません：' + (e && e.name ? e.name : 'エラー'));
-    toast('カメラの許可を確認してください');
+    setStatus('カメラを使用できません（' + (e && e.name ? e.name : 'エラー') + '）');
+    toast('カメラの使用許可を確認してください');
     return;
   }
   video.srcObject = stream;
-  try{ await video.play(); }catch(e){ /* 後段の resumeVideo で復帰 */ }
-  await unlockAudio();            // カメラ起動でセッションが切替わるため再度
-  scanRunning = true;
-  stallCount = 0; lastVideoTime = -1;
-  setStatus('よみとり中…（QR＝白わく／バーコード＝黄色わく）');
-  scheduleNext();
+  try{ await video.play(); }catch(e){}
+  await unlockAudio();                    // カメラ起動で音声セッションが切替わるため再実行
+  scanRunning = true; stall = 0; lastTime = -1;
+  setStatus('読取中（QRコード＝白枠 / バーコード＝黄枠）');
+  $('#btn-cam').textContent = 'カメラを停止';
+  schedule();
 }
-
-function scheduleNext(){
+function schedule(){
   clearTimeout(scanTimer);
-  if (scanRunning) scanTimer = setTimeout(scanTick, SCAN_MS);
+  if(scanRunning) scanTimer = setTimeout(tick, SCAN_MS);
 }
-
 function stopScan(){
   scanRunning = false;
   clearTimeout(scanTimer);
-  if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
-  if (video) video.srcObject = null;
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; }
+  if(video) video.srcObject = null;
   $('#reader').style.display = 'none';
   document.body.appendChild($('#reader'));
+  $('#reader-host-products').style.display = 'none';
   setStatus('カメラは停止中です');
-  const b = $('#btn-cam'); if (b) b.textContent = 'カメラを開始';
+  const b = $('#btn-cam'); if(b) b.textContent = 'カメラを開始';
 }
-
 function resumeVideo(){
-  if (!scanRunning || !video) return;
-  if (video.paused){ video.play().catch(() => {}); }
-  if (ac && ac.state === 'suspended') ac.resume().catch(() => {});
-  scheduleNext();
+  if(!scanRunning || !video) return;
+  if(video.paused) video.play().catch(()=>{});
+  if(ac && ac.state === 'suspended') ac.resume().catch(()=>{});
+  schedule();
 }
-
 async function restartCamera(){
   setStatus('カメラを再接続しています…');
-  const host = $('#reader').parentElement;
+  const slot = ($('#reader').parentElement || {}).id === 'reader-slot-p'
+    ? '#reader-slot-p' : '#reader-slot-r';
   const mode = scanMode;
   stopScan();
-  await new Promise(r => setTimeout(r, 400));
-  await startScan('#' + host.id, mode);
+  if(slot === '#reader-slot-p') $('#reader-host-products').style.display = '';
+  await new Promise(r=>setTimeout(r,400));
+  await startScan(slot, mode);
 }
+function tick(){
+  if(!scanRunning) return;
+  if(!video || video.readyState < 2){ schedule(); return; }
 
-function scanTick(){
-  if (!scanRunning){ return; }
-  if (!video || video.readyState < 2){ scheduleNext(); return; }
-
-  // フレーム停止検知（3秒進まなければ再接続）
-  if (video.currentTime === lastVideoTime){
-    if (++stallCount >= STALL_LIMIT){ stallCount = 0; restartCamera(); return; }
-  }else{
-    lastVideoTime = video.currentTime; stallCount = 0;
-  }
+  /* フレーム停止検知（約3秒でカメラ再取得） */
+  if(video.currentTime === lastTime){
+    if(++stall >= STALL_LIMIT){ stall = 0; restartCamera(); return; }
+  }else{ lastTime = video.currentTime; stall = 0; }
 
   const vw = video.videoWidth, vh = video.videoHeight;
-  if (!vw || !vh){ scheduleNext(); return; }
+  if(!vw || !vh){ schedule(); return; }
 
-  // プレビュー（object-fit:cover）と同じ中央正方形を切り出す
+  /* プレビュー(object-fit:cover)と同一の中央正方形を切り出す */
   const side = Math.min(vw, vh);
-  const sx = (vw - side) / 2, sy = (vh - side) / 2;
+  const sx = (vw - side)/2, sy = (vh - side)/2;
   canvas.width = SCAN_SIDE; canvas.height = SCAN_SIDE;
   ctx.drawImage(video, sx, sy, side, side, 0, 0, SCAN_SIDE, SCAN_SIDE);
 
   let text = null;
-
-  // (A) QR：正方形の全域
   try{
-    const full = ctx.getImageData(0, 0, SCAN_SIDE, SCAN_SIDE);
-    const qr = jsQR(full.data, full.width, full.height, { inversionAttempts:'dontInvert' });
-    if (qr && qr.data) text = qr.data;
-  }catch(e){ /* 描画前フレームは無視 */ }
+    const full = ctx.getImageData(0,0,SCAN_SIDE,SCAN_SIDE);
+    const qr = jsQR(full.data, full.width, full.height, { inversionAttempts:'attemptBoth' });
+    if(qr && qr.data) text = qr.data;
+  }catch(e){}
 
-  // (B) 1D：横長の帯だけ。2フレームに1回（負荷対策）
-  if (!text && (scanFrame++ % 2 === 0)){
+  /* 1Dは横長の帯のみ。2フレームに1回（負荷対策） */
+  if(!text && (frameNo++ % 2 === 0)){
     try{
-      const y = Math.floor(SCAN_SIDE * 0.30), h = Math.floor(SCAN_SIDE * 0.40);
+      const y = Math.floor(SCAN_SIDE*0.30), h = Math.floor(SCAN_SIDE*0.40);
       text = decode1D(ctx.getImageData(0, y, SCAN_SIDE, h));
-    }catch(e){ /* 同上 */ }
+    }catch(e){}
   }
 
-  if (text) handleDecoded(text);
-  scheduleNext();
+  if(text) handleDecoded(text);
+  schedule();
 }
-
 function handleDecoded(text){
   const now = Date.now();
-  if (text === lastText && now - lastAt < 1500) return;   // 連続読み防止
+  if(text === lastText && now - lastAt < DEDUPE_MS) return;
   lastText = text; lastAt = now;
 
-  if (scanMode === 'register'){
-    if (!CODE_RE.test(text)){ beepNg(); toast('バーコード（数字8〜14桁）ではありません'); return; }
+  if(scanMode === 'code'){
+    if(!CODE_RE.test(text)){ playError(); toast('バーコード（数字8〜14桁）ではありません'); return; }
     $('#inp-code').value = text;
-    beepOk(); stopScan(); showScreen('scr-edit');
-    toast('バーコードを読みとりました');
+    playTone(); stopScan();
+    toast('バーコードを読み取りました');
     return;
   }
-  if (text.startsWith('KP1|'))      addFromQrPayload(text);
-  else if (CODE_RE.test(text))      addByCode(text);
-  else { beepNg(); toast('対応していないコードです'); }
+  if(text.indexOf('KP1|') === 0) addByQr(text);
+  else if(CODE_RE.test(text))    addByCode(text);
+  else { playError(); $('#last-read').textContent = 'このQRコードは使えません'; }
+}
+function addByQr(text){
+  const a = text.split('|');
+  if(a.length !== 3){ playError(); $('#last-read').textContent = 'このQRコードは使えません'; return; }
+  const name = a[1];
+  const price = parseInt(a[2],10);
+  if(!name || !/^\d+$/.test(a[2]) || !Number.isFinite(price) || price < 0){
+    playError(); $('#last-read').textContent = 'このQRコードは使えません'; return;
+  }
+  addToCart(name, price); playTone();
+  $('#last-read').textContent = '読取：' + name + ' ' + yen(price) + '円';
+}
+function addByCode(code){
+  const p = products.find(x => x.code === code);
+  if(!p){ playError(); $('#last-read').textContent = '未登録のバーコードです（' + code + '）'; return; }
+  addToCart(p.name, p.price); playTone();
+  $('#last-read').textContent = '読取：' + p.name + ' ' + yen(p.price) + '円';
 }
 
-/* ============================================================
+/* ==========================================================
+   お会計
+   ========================================================== */
+function openCheckout(){
+  stopScan();
+  recvStr = '';
+  $('#pay-total').textContent = yen(cartTotal());
+  renderPay();
+  showScreen('scr-checkout');
+}
+function renderPay(){
+  const recv = parseInt(recvStr || '0', 10);
+  $('#pay-recv').textContent = yen(recv);
+  const ch = recv - cartTotal();
+  const el = $('#pay-change');
+  if(recvStr === ''){
+    el.textContent = 'お釣り 0 円'; el.classList.remove('minus');
+    $('#btn-done').disabled = true; return;
+  }
+  if(ch < 0){
+    el.textContent = 'お金が足りません（あと ' + yen(-ch) + ' 円）';
+    el.classList.add('minus'); $('#btn-done').disabled = true;
+  }else{
+    el.textContent = 'お釣り ' + yen(ch) + ' 円';
+    el.classList.remove('minus'); $('#btn-done').disabled = false;
+  }
+}
+function keyIn(k){
+  if(k === 'C'){ recvStr = ''; renderPay(); return; }
+  const next = (recvStr + k).replace(/^0+(?=\d)/,'');
+  if(next.length > 7) return;
+  if(parseInt(next,10) > MAX_RECV) return;
+  recvStr = next; renderPay();
+}
+function addRecv(v){
+  const next = Math.min((parseInt(recvStr||'0',10) + v), MAX_RECV);
+  recvStr = String(next); renderPay();
+}
+
+/* ==========================================================
    データ入出力
-   ============================================================ */
+   ========================================================== */
 function exportObject(){
   return {
-    app:'kidspos', format:2,
-    exportedAt:new Date().toISOString(),
+    app:'kidspos', format:2, exportedAt:new Date().toISOString(),
     products: products.map(p => ({ name:p.name, price:p.price, code:p.code }))
   };
 }
-
 function exportFile(){
-  const blob = new Blob([JSON.stringify(exportObject(), null, 2)],
-    { type:'application/json' });
+  const blob = new Blob([JSON.stringify(exportObject(),null,2)],{type:'application/json'});
+  const d = new Date(), z = (n)=>String(n).padStart(2,'0');
   const a = document.createElement('a');
-  const d = new Date();
-  const p2 = (n) => String(n).padStart(2, '0');
   a.href = URL.createObjectURL(blob);
-  a.download = `kidspos-${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}.json`;
+  a.download = 'kidspos-' + d.getFullYear() + z(d.getMonth()+1) + z(d.getDate()) + '.json';
   document.body.appendChild(a); a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   toast('ファイルを保存しました');
 }
-
 async function exportCopy(){
   const txt = JSON.stringify(exportObject());
-  try{
-    await navigator.clipboard.writeText(txt);
-    toast('コピーしました');
-  }catch(e){
-    $('#inp-json').value = txt;
-    toast('コピーできないので下の欄に出しました');
-  }
+  try{ await navigator.clipboard.writeText(txt); toast('コピーしました'); }
+  catch(e){ $('#inp-json').value = txt; toast('コピーできないため下欄に出力しました'); }
 }
-
 function normalizeImported(json){
-  if (!json || json.app !== 'kidspos') throw new Error('Kids POS のデータではありません');
-  if (json.format !== 1 && json.format !== 2) throw new Error('対応していない形式です');
-  if (!Array.isArray(json.products)) throw new Error('商品データがありません');
-  const seen = new Set();
-  const out = [];
-  for (const raw of json.products){
-    if (out.length >= MAX_ITEMS) break;
+  if(!json || json.app !== 'kidspos') throw new Error('Kids POS のデータではありません');
+  if(json.format !== 1 && json.format !== 2) throw new Error('対応していない形式です');
+  if(!Array.isArray(json.products)) throw new Error('商品データがありません');
+  const seen = new Set(), out = [];
+  for(const raw of json.products){
+    if(out.length >= MAX_ITEMS) break;
     const p = sanitize(raw);
-    if (!p) continue;
-    if (json.format === 1) p.code = '';
-    if (p.code){
-      if (seen.has(p.code)) p.code = ''; else seen.add(p.code);
-    }
+    if(!p) continue;
+    if(json.format === 1) p.code = '';
+    if(p.code){ if(seen.has(p.code)) p.code = ''; else seen.add(p.code); }
+    p.id = newId();
     out.push(p);
   }
-  if (!out.length) throw new Error('読みこめる商品がありませんでした');
+  if(!out.length) throw new Error('読み込める商品がありませんでした');
   return out;
 }
-
 async function importFromText(txt){
   let list;
   try{ list = normalizeImported(JSON.parse(txt)); }
-  catch(e){ beepNg(); toast('読みこめません：' + e.message); return; }
+  catch(e){ playError(); toast('読み込めません：' + e.message); return; }
   const ok = await confirmBox(
-    `${list.length}点を読みこみます。\nいまの${products.length}点はすべて置きかわります。`);
-  if (!ok) return;
-  products = list; saveProducts(); beepOk();
-  toast(`${list.length}点を読みこみました`);
-  showScreen('scr-products');
+    list.length + '点を読み込みます。\n現在の' + products.length + '点は全て置き換わります。','読込');
+  if(!ok) return;
+  products = list; saveProducts(); playTone();
+  toast(list.length + '点を読み込みました');
+  showScreen('scr-list');
 }
 
-/* ============================================================
-   イベント登録
-   ============================================================ */
-document.addEventListener('DOMContentLoaded', () => {
+/* ==========================================================
+   設定画面
+   ========================================================== */
+function syncSettingsUI(){
+  $('#sel-tone').value = settings.tone;
+  $('#sel-vol').value  = settings.vol;
+  $('#chk-vib').checked = settings.vibration;
+}
+
+/* ==========================================================
+   初期化
+   ========================================================== */
+document.addEventListener('DOMContentLoaded', ()=>{
   loadAll();
   $$('.max-items').forEach(e => e.textContent = MAX_ITEMS);
   $$('.max-name').forEach(e => e.textContent = MAX_NAME);
   $('#inp-name').maxLength = MAX_NAME;
   $('#inp-price').max = MAX_PRICE;
 
-  // 最初のタップで音声をアンロック
-  const once = () => { unlockAudio(); document.removeEventListener('touchend', once);
-                       document.removeEventListener('click', once); };
-  document.addEventListener('touchend', once, { passive:true });
+  /* 初回タップで AudioContext を解除 */
+  const once = ()=>{ unlockAudio();
+    document.removeEventListener('touchend',once); document.removeEventListener('click',once); };
+  document.addEventListener('touchend', once, {passive:true});
   document.addEventListener('click', once);
 
-  $$('[data-go]').forEach(b => b.addEventListener('click', () => showScreen(b.dataset.go)));
-  $('#btn-back').addEventListener('click', () => showScreen(backTo || 'scr-home'));
+  $$('[data-go]').forEach(b => b.addEventListener('click', ()=>{
+    if(b.dataset.go === 'scr-products') openEdit(null); else showScreen(b.dataset.go);
+  }));
+  $('#btn-home').addEventListener('click', ()=>showScreen('scr-home'));
 
-  // --- 商品 ---
-  $('#btn-new').addEventListener('click', () => {
-    if (products.length >= MAX_ITEMS){ beepNg(); toast(`商品は${MAX_ITEMS}点までです`); return; }
-    openEdit(-1);
+  /* --- 商品一覧 --- */
+  $$('.sort').forEach(b => b.addEventListener('click', ()=>{
+    settings.sort = b.dataset.sort; saveSettings(); renderList();
+  }));
+  $('#btn-thumb').addEventListener('click', ()=>{
+    settings.showQr = !settings.showQr; saveSettings(); renderList();
   });
-  $('#prod-body').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-edit]');
-    if (b) openEdit(Number(b.dataset.edit));
+  $('#list-body').addEventListener('click', (e)=>{
+    const tr = e.target.closest('tr[data-id]');
+    if(tr) openEdit(tr.dataset.id);
   });
+
+  /* --- 商品の登録 --- */
   $('#btn-save').addEventListener('click', saveEdit);
   $('#btn-delete').addEventListener('click', deleteEdit);
-  $('#btn-scan-code').addEventListener('click', () => {
-    startScan('#reader-host-cart', 'register');
-    showScreen('scr-cart');
-    setStatus('バーコードをよみとってください（登録用）');
+  $('#btn-cancel').addEventListener('click', ()=>{ editId = null; showScreen('scr-list'); });
+  $('#btn-clear-code').addEventListener('click', ()=>{ $('#inp-code').value = ''; });
+  $('#btn-scan-code').addEventListener('click', ()=>{
+    $('#reader-host-products').style.display = '';
+    startScan('#reader-slot-p','code');
   });
 
-  // --- 印刷 ---
-  $$('.qrsize').forEach(b => b.addEventListener('click', () => {
-    settings.qrSize = Number(b.dataset.size); saveSettings(); renderLabels();
+  /* --- 印刷 --- */
+  $$('.qrsize').forEach(b => b.addEventListener('click', ()=>{
+    settings.qrSize = Number(b.dataset.size); saveSettings(); renderSheet();
   }));
-  $('#btn-print').addEventListener('click', () => window.print());
+  $('#btn-print').addEventListener('click', ()=>window.print());
 
-  // --- レジ ---
-  $('#btn-cam').addEventListener('click', () => {
-    if (scanRunning){ stopScan(); }
-    else { startScan('#reader-host-cart', 'cart'); $('#btn-cam').textContent = 'カメラを停止'; }
+  /* --- レジ --- */
+  $('#btn-cam').addEventListener('click', ()=>{
+    if(scanRunning) stopScan(); else startScan('#reader-slot-r','register');
   });
-  $('#btn-manual').addEventListener('click', () => {
-    if (!products.length){ toast('先に商品をとうろくしてください'); return; }
-    const names = products.map((p, i) => `${i + 1}. ${p.name} ${p.price}円`).join('\n');
-    const s = window.prompt('番号をいれてください\n' + names, '');
-    const i = parseInt(s, 10) - 1;
-    if (Number.isInteger(i) && products[i]){ addToCart(products[i].name, products[i].price); beepOk(); }
-    setTimeout(resumeVideo, 60);
+  $('#btn-pick').addEventListener('click', ()=>{
+    const p = $('#pick-panel');
+    const open = p.style.display === 'none';
+    p.style.display = open ? '' : 'none';
+    $('#btn-pick').textContent = open ? '一覧を閉じる' : '一覧から選ぶ';
+    if(open) renderPick();
   });
-  $('#cart-body').addEventListener('click', (e) => {
+  $('#pick-list').addEventListener('click', (e)=>{
+    const b = e.target.closest('[data-pick]');
+    if(!b) return;
+    const p = products.find(x => x.id === b.dataset.pick);
+    if(p){ addToCart(p.name, p.price); playTone();
+      $('#last-read').textContent = '選択：' + p.name + ' ' + yen(p.price) + '円'; }
+  });
+  $('#cart-body').addEventListener('click', (e)=>{
     const b = e.target.closest('[data-del]');
-    if (!b) return;
+    if(!b) return;
     const i = Number(b.dataset.del);
-    if (cart[i]){ cart[i].qty--; if (cart[i].qty <= 0) cart.splice(i, 1); renderCart(); }
+    if(cart[i]){ cart[i].qty--; if(cart[i].qty <= 0) cart.splice(i,1); renderCart(); }
   });
-  $('#btn-clear').addEventListener('click', async () => {
-    if (!cart.length) return;
-    const ok = await confirmBox('カートを全部消します。よろしいですか？');
-    if (ok){ cart = []; renderCart(); toast('全部消しました'); }
+  $('#btn-clear').addEventListener('click', async ()=>{
+    if(!cart.length) return;
+    if(await confirmBox('カートの内容を全て消去します。よろしいですか。','消去')){
+      cart = []; renderCart(); $('#last-read').textContent = ''; toast('全て消去しました');
+    }
     resumeVideo();
   });
-  $('#btn-pay').addEventListener('click', () => {
-    if (!cart.length){ beepNg(); toast('カートがからっぽです'); return; }
-    stopScan();
-    $('#pay-total').textContent = yen(cartTotal());
-    $('#inp-recv').value = '';
-    updateChange();
-    showScreen('scr-pay');
+  $('#btn-checkout').addEventListener('click', openCheckout);
+
+  /* --- お会計 --- */
+  $$('.keypad button').forEach(b => b.addEventListener('click', ()=>keyIn(b.dataset.k)));
+  $$('.fix').forEach(b => b.addEventListener('click', ()=>addRecv(Number(b.dataset.add))));
+  $('#btn-exact').addEventListener('click', ()=>{ recvStr = String(cartTotal()); renderPay(); });
+  $('#btn-back-reg').addEventListener('click', ()=>showScreen('scr-register'));
+  $('#btn-done').addEventListener('click', ()=>{
+    if(parseInt(recvStr||'0',10) < cartTotal()){ playError(); toast('お金が足りません'); return; }
+    playTone();
+    cart = []; recvStr = '';
+    renderCart(); $('#last-read').textContent = '';
+    toast('ありがとうございました');
+    showScreen('scr-register');
+    startScan('#reader-slot-r','register');
   });
 
-  // --- 会計 ---
-  function updateChange(){
-    const total = cartTotal();
-    const recv = parseInt($('#inp-recv').value, 10);
-    const el = $('#pay-change');
-    if (!Number.isFinite(recv)){ el.textContent = 'おつり 0 円'; el.classList.remove('minus'); return; }
-    const ch = recv - total;
-    el.textContent = (ch >= 0) ? `おつり ${yen(ch)} 円` : `あと ${yen(-ch)} 円たりません`;
-    el.classList.toggle('minus', ch < 0);
-  }
-  window.updateChange = updateChange;
-  $('#inp-recv').addEventListener('input', updateChange);
-  $$('.recv').forEach(b => b.addEventListener('click', () => {
-    const cur = parseInt($('#inp-recv').value, 10) || 0;
-    $('#inp-recv').value = cur + Number(b.dataset.add);
-    updateChange();
-  }));
-  $('#btn-pay-back').addEventListener('click', () => showScreen('scr-cart'));
-  $('#btn-done').addEventListener('click', () => {
-    const recv = parseInt($('#inp-recv').value, 10);
-    if (Number.isFinite(recv) && recv < cartTotal()){ beepNg(); toast('お金がたりません'); return; }
-    beepDone(); cart = []; renderCart();
-    toast('ありがとうございました！');
-    showScreen('scr-cart');
+  /* --- 設定 --- */
+  $('#sel-tone').addEventListener('change', (e)=>{ settings.tone = e.target.value; saveSettings(); playTone(); });
+  $('#sel-vol').addEventListener('change',  (e)=>{ settings.vol  = e.target.value; saveSettings(); playTone(); });
+  $('#chk-vib').addEventListener('change',  (e)=>{ settings.vibration = e.target.checked; saveSettings(); });
+  $('#btn-test').addEventListener('click', async ()=>{ await unlockAudio(); playTone(); });
+  $('#btn-reset').addEventListener('click', async ()=>{
+    if(!await confirmBox('登録した商品と設定を全て削除します。元に戻せません。','全削除')) return;
+    localStorage.removeItem(LS_P); localStorage.removeItem(LS_S);
+    products = []; cart = [];
+    settings = { tone:'pi', vol:'mid', vibration:true, qrSize:28, showQr:false, sort:'reg' };
+    toast('全データを削除しました');
+    showScreen('scr-home');
   });
 
-  // --- データ ---
+  /* --- データ --- */
   $('#btn-export-file').addEventListener('click', exportFile);
   $('#btn-export-copy').addEventListener('click', exportCopy);
-  $('#btn-import-text').addEventListener('click', () => {
+  $('#btn-import-text').addEventListener('click', ()=>{
     const t = $('#inp-json').value.trim();
-    if (!t){ toast('文字をはりつけてください'); return; }
+    if(!t){ toast('文字列を貼り付けてください'); return; }
     importFromText(t);
   });
-  $('#inp-file').addEventListener('change', (e) => {
+  $('#inp-file').addEventListener('change', (e)=>{
     const f = e.target.files && e.target.files[0];
-    if (!f) return;
+    if(!f) return;
     const r = new FileReader();
-    r.onload = () => { importFromText(String(r.result)); e.target.value = ''; };
-    r.onerror = () => { toast('ファイルを読めませんでした'); };
+    r.onload = ()=>{ importFromText(String(r.result)); e.target.value=''; };
+    r.onerror = ()=>toast('ファイルを読み込めませんでした');
     r.readAsText(f);
   });
 
-  // --- 復帰系 ---
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') setTimeout(resumeVideo, 120);
+  /* --- 復帰処理 --- */
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState !== 'visible') return;
+    if($('#scr-register').classList.contains('active') || $('#scr-products').classList.contains('active')){
+      setTimeout(resumeVideo, 150);
+    }
   });
-  window.addEventListener('pageshow', () => setTimeout(resumeVideo, 120));
-  window.addEventListener('focus', () => setTimeout(resumeVideo, 120));
+  window.addEventListener('pageshow', ()=>setTimeout(resumeVideo,150));
+  window.addEventListener('focus',    ()=>setTimeout(resumeVideo,150));
 
   showScreen('scr-home');
 });
