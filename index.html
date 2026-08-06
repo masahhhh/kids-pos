@@ -39,7 +39,6 @@ button{font-family:inherit;font-size:16px;cursor:pointer}
 .btn.ng{background:var(--ng)}
 .btn.sm{width:auto;padding:9px 14px;font-size:14px;margin:0;border-radius:9px}
 .btn:disabled{opacity:.4;pointer-events:none}
-.btn.on{background:var(--pri);color:#fff}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
@@ -60,11 +59,9 @@ tr.tap:active{background:#eef3f9}
 .thumb{width:44px;height:44px}
 .thumb svg{width:100%;height:100%;display:block}
 
-/* ===== カメラプレビュー（正方形） ===== */
+/* ===== カメラプレビュー（正方形・ガイド枠なし） ===== */
 #reader{width:100%;aspect-ratio:1/1;max-height:66vh;border-radius:10px;overflow:hidden;background:#000;position:relative}
 #reader video{position:absolute;top:0;left:0;width:100%!important;height:100%!important;object-fit:cover;display:block}
-#reader::after{content:"";position:absolute;pointer-events:none;top:15%;left:15%;width:70%;height:70%;border:3px solid rgba(255,255,255,.75);border-radius:12px}
-#reader::before{content:"";position:absolute;pointer-events:none;top:30%;left:4%;width:92%;height:40%;border:2px dashed rgba(255,220,0,.85);border-radius:6px}
 #scan-status{font-size:12px;color:var(--mut);margin-top:6px;min-height:1.4em}
 #last-read{font-size:14px;font-weight:700;margin-top:4px;min-height:1.6em}
 
@@ -292,6 +289,7 @@ tr.tap:active{background:#eef3f9}
     </select>
 
     <button class="btn sm sub" id="btn-test" style="margin-top:12px">試し聞き</button>
+    <div class="hint" id="audio-state">状態：未確認</div>
     <div class="hint">本体が消音（サイレント）状態の場合は音が鳴りません。エラー音の種類は変更できません。</div>
   </div>
   <div class="card">
@@ -362,6 +360,20 @@ const LS_P = 'kidspos.products';
 const LS_S = 'kidspos.settings';
 
 /* ==========================================================
+   効果音の定義
+   ========================================================== */
+const TONES = {
+  pi:     [{f:1200,t:0,   d:0.10,w:'sine'}],
+  pipo:   [{f:988, t:0,   d:0.09,w:'sine'},{f:1319,t:0.10,d:0.13,w:'sine'}],
+  pon:    [{f:880, t:0,   d:0.30,w:'triangle'}],
+  charin: [{f:2093,t:0,   d:0.18,w:'sine'},{f:3136,t:0.02,d:0.16,w:'sine'},{f:2637,t:0.05,d:0.24,w:'sine'}],
+  bell:   [{f:1568,t:0,   d:0.60,w:'sine'},{f:3136,t:0,   d:0.55,w:'sine'}],
+  none:   []
+};
+const ERR_TONE = [{f:300,t:0,d:0.30,w:'sawtooth'}];
+const VOLS = { low:0.06, mid:0.15, high:0.30 };
+
+/* ==========================================================
    状態
    ========================================================== */
 let products = [];   // {id,name,price,code}
@@ -409,6 +421,86 @@ function confirmBox(msg, okLabel){
 }
 
 /* ==========================================================
+   効果音（Web Audio API / 音源ファイルなし）
+   ========================================================== */
+let ac = null, master = null;
+
+/* 出力先を「再生」として宣言する（対応環境のみ有効） */
+function declarePlayback(){
+  try{ if(navigator.audioSession) navigator.audioSession.type = 'playback'; }catch(e){}
+}
+
+function ensureCtx(){
+  if(ac) return ac;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return null;
+  try{ ac = new AC(); }catch(e){ return null; }
+  master = ac.createGain();
+  master.gain.value = 1;
+  master.connect(ac.destination);
+  /* 無音オシレータを常時稼働させ、iOSによる自動停止を防ぐ */
+  try{
+    const o = ac.createOscillator(), g = ac.createGain();
+    g.gain.value = 0;
+    o.connect(g); g.connect(ac.destination);
+    o.start();
+  }catch(e){}
+  /* 停止・中断を検知したら即座に復帰を試みる */
+  ac.onstatechange = ()=>{
+    if(ac.state !== 'running'){ declarePlayback(); ac.resume().catch(()=>{}); }
+  };
+  return ac;
+}
+
+function unlockAudio(){
+  declarePlayback();
+  if(!ensureCtx()) return Promise.resolve();
+  const p = (ac.state === 'running') ? Promise.resolve() : ac.resume().catch(()=>{});
+  try{                                   /* 無音バッファでハード的に解除 */
+    const b = ac.createBuffer(1,1,22050);
+    const s = ac.createBufferSource();
+    s.buffer = b; s.connect(ac.destination); s.start(0);
+  }catch(e){}
+  return p;
+}
+
+function emitAll(spec, gain){
+  if(!ac || !master) return;
+  const base = ac.currentTime + 0.02;
+  spec.forEach(p=>{
+    const t0 = base + p.t;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = p.w; o.frequency.value = p.f;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(gain,0.0002), t0 + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + p.d);
+    o.connect(g); g.connect(master);
+    o.start(t0); o.stop(t0 + p.d + 0.03);
+  });
+}
+
+/* 停止中でも打ち切らず、復帰を待って発音する */
+function play(spec, gain){
+  if(!spec || !spec.length) return;
+  if(!ensureCtx()) return;
+  if(ac.state === 'running'){ emitAll(spec, gain); return; }
+  declarePlayback();
+  ac.resume().then(()=>emitAll(spec, gain)).catch(()=>{});
+}
+
+function playTone(){
+  play(TONES[settings.tone] || [], VOLS[settings.vol] || 0.15);
+  vibrate(30);
+}
+function playError(){
+  play(ERR_TONE, VOLS[settings.vol] || 0.15);
+  vibrate([40,60,40]);
+}
+function vibrate(pat){
+  if(settings.vibration && navigator.vibrate){ try{ navigator.vibrate(pat); }catch(e){} }
+}
+
+/* ==========================================================
    永続化
    ========================================================== */
 function sanitize(p){
@@ -441,59 +533,6 @@ function loadAll(){
 }
 const saveProducts = () => localStorage.setItem(LS_P, JSON.stringify(products));
 const saveSettings = () => localStorage.setItem(LS_S, JSON.stringify(settings));
-
-/* ==========================================================
-   効果音（Web Audio API / 音源ファイルなし）
-   ========================================================== */
-const TONES = {
-  pi:     [{f:1200,t:0,   d:0.10,w:'sine'}],
-  pipo:   [{f:988, t:0,   d:0.09,w:'sine'},{f:1319,t:0.10,d:0.13,w:'sine'}],
-  pon:    [{f:880, t:0,   d:0.30,w:'triangle'}],
-  charin: [{f:2093,t:0,   d:0.18,w:'sine'},{f:3136,t:0.02,d:0.16,w:'sine'},{f:2637,t:0.05,d:0.24,w:'sine'}],
-  bell:   [{f:1568,t:0,   d:0.60,w:'sine'},{f:3136,t:0,   d:0.55,w:'sine'}],
-  none:   []
-};
-const VOLS = { low:0.06, mid:0.15, high:0.30 };
-
-let ac = null;
-async function unlockAudio(){
-  try{
-    if(!ac){
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if(!AC) return;
-      ac = new AC();
-    }
-    if(ac.state === 'suspended') await ac.resume();
-    const b = ac.createBuffer(1,1,22050);
-    const s = ac.createBufferSource();
-    s.buffer = b; s.connect(ac.destination); s.start(0);
-    if(navigator.audioSession) navigator.audioSession.type = 'playback';
-  }catch(e){ /* 音が出なくても動作は継続 */ }
-}
-function emit(f, start, dur, wave, gain){
-  if(!ac || ac.state !== 'running') return;
-  const t0 = ac.currentTime + start;
-  const o = ac.createOscillator(), g = ac.createGain();
-  o.type = wave; o.frequency.value = f;
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(Math.max(gain,0.0002), t0 + 0.008);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  o.connect(g); g.connect(ac.destination);
-  o.start(t0); o.stop(t0 + dur + 0.03);
-}
-function playTone(){
-  const spec = TONES[settings.tone] || [];
-  const g = VOLS[settings.vol] || 0.15;
-  spec.forEach(p => emit(p.f, p.t, p.d, p.w, g));
-  vibrate(30);
-}
-function playError(){
-  emit(300, 0, 0.30, 'sawtooth', VOLS[settings.vol] || 0.15);
-  vibrate([40,60,40]);
-}
-function vibrate(pat){
-  if(settings.vibration && navigator.vibrate){ try{ navigator.vibrate(pat); }catch(e){} }
-}
 
 /* ==========================================================
    画面遷移
@@ -733,6 +772,7 @@ async function startScan(slotSel, mode){
   ensureVideo();
   if(scanRunning){ resumeVideo(); return; }
   setStatus('カメラを起動しています…');
+  declarePlayback();                      // getUserMedia の前に出力先を宣言する
   try{
     stream = await navigator.mediaDevices.getUserMedia({
       audio:false,
@@ -746,8 +786,10 @@ async function startScan(slotSel, mode){
   video.srcObject = stream;
   try{ await video.play(); }catch(e){}
   await unlockAudio();                    // カメラ起動で音声セッションが切替わるため再実行
+  setTimeout(()=>{ declarePlayback(); unlockAudio(); }, 300);
+  setTimeout(()=>{ declarePlayback(); unlockAudio(); }, 1200);
   scanRunning = true; stall = 0; lastTime = -1;
-  setStatus('読取中（QRコード＝白枠 / バーコード＝黄枠）');
+  setStatus('読取中（コードを画面の中央に合わせてください）');
   $('#btn-cam').textContent = 'カメラを停止';
   schedule();
 }
@@ -769,7 +811,7 @@ function stopScan(){
 function resumeVideo(){
   if(!scanRunning || !video) return;
   if(video.paused) video.play().catch(()=>{});
-  if(ac && ac.state === 'suspended') ac.resume().catch(()=>{});
+  if(ac && ac.state !== 'running'){ declarePlayback(); ac.resume().catch(()=>{}); }
   schedule();
 }
 async function restartCamera(){
@@ -963,11 +1005,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
   $('#inp-name').maxLength = MAX_NAME;
   $('#inp-price').max = MAX_PRICE;
 
-  /* 初回タップで AudioContext を解除 */
-  const once = ()=>{ unlockAudio();
-    document.removeEventListener('touchend',once); document.removeEventListener('click',once); };
-  document.addEventListener('touchend', once, {passive:true});
-  document.addEventListener('click', once);
+  /* すべての操作で音声文脈の復帰を試みる（capture=true で各処理より先に走る） */
+  const kick = ()=>{ unlockAudio(); };
+  document.addEventListener('pointerdown', kick, {capture:true});
+  document.addEventListener('touchstart',  kick, {capture:true, passive:true});
+  document.addEventListener('click',       kick, {capture:true});
 
   $$('[data-go]').forEach(b => b.addEventListener('click', ()=>{
     if(b.dataset.go === 'scr-products') openEdit(null); else showScreen(b.dataset.go);
@@ -1054,7 +1096,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
   $('#sel-tone').addEventListener('change', (e)=>{ settings.tone = e.target.value; saveSettings(); playTone(); });
   $('#sel-vol').addEventListener('change',  (e)=>{ settings.vol  = e.target.value; saveSettings(); playTone(); });
   $('#chk-vib').addEventListener('change',  (e)=>{ settings.vibration = e.target.checked; saveSettings(); });
-  $('#btn-test').addEventListener('click', async ()=>{ await unlockAudio(); playTone(); });
+  $('#btn-test').addEventListener('click', async ()=>{
+    await unlockAudio();
+    playTone();
+    const st = ac ? ac.state : '未初期化';
+    const sess = navigator.audioSession ? navigator.audioSession.type : '非対応';
+    $('#audio-state').textContent =
+      '状態：' + st + ' / セッション：' + sess + ' / 音量値：' + (VOLS[settings.vol] || '-');
+  });
   $('#btn-reset').addEventListener('click', async ()=>{
     if(!await confirmBox('登録した商品と設定を全て削除します。元に戻せません。','全削除')) return;
     localStorage.removeItem(LS_P); localStorage.removeItem(LS_S);
@@ -1084,12 +1133,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
   /* --- 復帰処理 --- */
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState !== 'visible') return;
+    declarePlayback(); unlockAudio();
     if($('#scr-register').classList.contains('active') || $('#scr-products').classList.contains('active')){
       setTimeout(resumeVideo, 150);
     }
   });
-  window.addEventListener('pageshow', ()=>setTimeout(resumeVideo,150));
-  window.addEventListener('focus',    ()=>setTimeout(resumeVideo,150));
+  window.addEventListener('pageshow', ()=>{ unlockAudio(); setTimeout(resumeVideo,150); });
+  window.addEventListener('focus',    ()=>{ unlockAudio(); setTimeout(resumeVideo,150); });
 
   showScreen('scr-home');
 });
